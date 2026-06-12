@@ -1,0 +1,30 @@
+version: 2
+
+# IMPLEMENTAÇÃO ATUAL (Seeds)
+# O seed é carregado pelo dbt no dataset `raw` e declarado aqui como source
+# para que o staging sempre leia via source() — quando a ingestão real
+# substituir o seed, só este arquivo muda.
+sources:
+  - name: seed_raw
+    description: "Dados carregados via dbt seed no dataset raw (modo de desenvolvimento)."
+    schema: raw
+    tables:
+      - name: seed_ecommerce_sintetico
+        description: >
+          Espelho fiel do CSV sintético de e-commerce. Uma linha por evento de pedido,
+          denormalizado (pedido + produto + cliente). Contém problemas de qualidade
+          propositais (duplicatas, fusos misturados, estados sujos, valores inconsistentes)
+          tratados na camada de staging.
+
+# ROADMAP FUTURO (Airbyte / CDC) — não implementar agora
+# sources:
+#   - name: postgres_raw
+#     database: "{{ env_var('GCP_PROJECT_ID') }}"
+#     schema: raw
+#     freshness:
+#       warn_after:  {count: 6,  period: hour}
+#       error_after: {count: 24, period: hour}
+#     loaded_at_field: _airbyte_emitted_at
+#     tables:
+#       - name: orders
+#         description: "Pedidos replicados do PostgreSQL operacional."

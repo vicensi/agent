@@ -1,0 +1,199 @@
+version: 2
+
+models:
+  - name: fct_orders
+    description: >
+      Fato de pedidos no nível de 1 linha por order_id.
+      Fonte: seed de e-commerce via staging (recarga full).
+      Inclui métricas de receita entregue, devoluções e receita líquida.
+    config:
+      tags: ["mart", "fct", "daily"]
+    columns:
+      - name: order_id
+        description: "PK — identificador único do pedido."
+        tests:
+          - not_null
+          - unique
+
+      - name: customer_id
+        description: "FK para dim_customers."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_id
+
+      - name: product_name
+        description: "FK para dim_products (nulo em ~0,3% dos pedidos da fonte)."
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_products')
+                field: product_name
+
+      - name: status
+        description: "Status final do pedido."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['aprovado', 'enviado', 'entregue', 'cancelado', 'aguardando_pagamento']
+
+      - name: total_amount_brl
+        description: "Valor total do pedido em BRL após desconto."
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: true
+
+      - name: created_date
+        description: "Data de criação do pedido (sem hora, derivada do timestamp UTC)."
+        tests:
+          - not_null
+
+      - name: delivered_revenue_brl
+        description: "{{ doc('delivered_revenue_brl') }}"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: true
+
+      - name: return_amount_brl
+        description: >
+          Valor devolvido em BRL, limitado ao valor do pedido
+          (LEAST(valor_devolucao, valor_total) — a fonte tem devoluções acima do total).
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: true
+
+      - name: net_revenue_brl
+        description: "{{ doc('net_revenue_brl') }}"
+        tests:
+          - not_null
+
+      - name: is_cross_month_return
+        description: "TRUE quando a devolução ocorreu em mês diferente do mês do pedido."
+
+  - name: dim_customers
+    description: >
+      Dimensão de clientes. 1 linha por customer_id, derivada dos pedidos
+      (a fonte denormalizada não tem cadastro). Estado e CEP vêm do pedido mais recente.
+    config:
+      tags: ["mart", "dim"]
+    columns:
+      - name: customer_id
+        description: "PK — identificador único do cliente."
+        tests:
+          - not_null
+          - unique
+
+      - name: customer_state
+        description: "UF do cliente (normalizada a partir das grafias sujas da fonte)."
+
+      - name: lifetime_value_brl
+        description: "LTV — soma de total_amount_brl de todos os pedidos do cliente."
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: true
+
+      - name: total_orders
+        description: "Quantidade total de pedidos do cliente."
+        tests:
+          - not_null
+
+  - name: dim_products
+    description: >
+      Dimensão de produtos. 1 linha por product_name, derivada dos pedidos
+      (a fonte denormalizada não tem catálogo).
+    config:
+      tags: ["mart", "dim"]
+    columns:
+      - name: product_name
+        description: "PK — nome do produto."
+        tests:
+          - not_null
+          - unique
+
+      - name: category
+        description: "Categoria do produto (normalizada em lower case)."
+        tests:
+          - not_null
+
+      - name: total_revenue_brl
+        description: "Receita total do produto em BRL (soma de total_amount_brl)."
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: true
+
+  - name: agg_daily_revenue
+    description: >
+      Receita agregada por dia e canal. Granularidade: 1 linha por created_date x channel.
+      Fonte principal dos dashboards de receita no Looker Studio.
+    config:
+      tags: ["mart", "agg", "daily"]
+    columns:
+      - name: created_date
+        description: "Data dos pedidos agregados."
+        tests:
+          - not_null
+
+      - name: channel
+        description: "Canal de venda (app_android, app_ios, site_desktop, site_mobile, marketplace)."
+        tests:
+          - not_null
+
+      - name: total_revenue_brl
+        description: "Soma de total_amount_brl dos pedidos do dia/canal (todos os status)."
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: true
+
+      - name: delivered_revenue_brl
+        description: "Soma de delivered_revenue_brl — apenas pedidos com status = 'entregue'."
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: true
+
+      - name: return_amount_brl
+        description: "Soma de return_amount_brl — valor devolvido no dia/canal (limitado ao valor do pedido)."
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: true
+
+      - name: net_revenue_brl
+        description: "{{ doc('net_revenue_brl') }} Agregado por dia/canal."
+        tests:
+          - not_null
+
+      - name: avg_ticket_brl
+        description: "Ticket médio dos pedidos do dia/canal (total_amount_brl médio, todos os status)."
+
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - created_date
+              - channel
