@@ -1,0 +1,51 @@
+name: ecommerce_analytics
+version: "1.0.0"
+profile: ecommerce_analytics
+
+model-paths: ["models"]
+snapshot-paths: ["snapshots"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+docs-paths: ["docs"]
+
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  ecommerce_analytics:
+    staging:
+      +materialized: view
+      +schema: staging
+      +tags: ["staging"]
+
+    marts:
+      +materialized: table
+      +schema: marts
+      +tags: ["mart"]
+
+seeds:
+  ecommerce_analytics:
+    +schema: raw
+    +quote_columns: false
+    seed_ecommerce_sintetico:
+      +column_types:
+        order_id: string
+        cliente_id: int64
+        data_pedido: string
+        nome_produto: string
+        categoria: string
+        quantidade: int64
+        preco_unitario: float64
+        desconto_pct: float64
+        valor_bruto: float64
+        valor_total: float64
+        status: string
+        canal: string
+        metodo_pagamento: string
+        estado_cliente: string
+        cep_cliente: string
+        review_score: float64
+        tem_devolucao: boolean
+        data_devolucao: string
+        valor_devolucao: float64

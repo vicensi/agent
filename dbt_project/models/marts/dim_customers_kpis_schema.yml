@@ -1,0 +1,240 @@
+version: 2
+
+models:
+  - name: dim_customers_kpis
+    description: >
+      Dimensão enriquecida de clientes com KPIs de negócio para BI.
+      1 linha por customer_id — snapshot diário do estado atual do cliente.
+      Cobre RFM, tendência de receita, atividade, devoluções e segmentação automática.
+      Fonte primária: fct_orders (apenas pedidos com status = 'delivered').
+      Consumo direto no Looker Studio via role agent_readonly.
+    config:
+      tags: ["mart", "dim", "customers", "daily", "bi"]
+
+    columns:
+
+      # ── IDENTIFICAÇÃO ────────────────────────────────────────────────────────
+
+      - name: customer_id
+        description: "PK — identificador único do cliente."
+        tests:
+          - not_null
+          - unique
+
+      - name: customer_name
+        description: "Nome completo do cliente."
+        tests:
+          - not_null
+
+      - name: email
+        description: "E-mail do cliente."
+        tests:
+          - not_null
+          - unique
+
+      - name: city
+        description: "Cidade de cadastro do cliente."
+
+      - name: state
+        description: "Estado de cadastro do cliente (UF)."
+
+      - name: signup_date
+        description: "Data de criação da conta."
+        tests:
+          - not_null
+
+      # ── RECÊNCIA (R) ──────────────────────────────────────────────────────────
+
+      - name: last_order_date
+        description: "Data do último pedido entregue."
+        tests:
+          - not_null
+
+      - name: first_order_date
+        description: "Data do primeiro pedido entregue."
+        tests:
+          - not_null
+
+      - name: days_since_last_order
+        description: "Dias desde o último pedido entregue até hoje. Usado para classificar atividade e score R."
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: customer_lifespan_days
+        description: "Dias entre o primeiro e o último pedido entregue. Zero para clientes de primeira compra."
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      # ── FREQUÊNCIA (F) ────────────────────────────────────────────────────────
+
+      - name: total_orders
+        description: "Total de pedidos entregues na vida do cliente."
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 1
+
+      - name: active_months
+        description: "Quantidade de meses distintos com ao menos 1 pedido entregue."
+
+      - name: avg_days_between_orders
+        description: >
+          Intervalo médio em dias entre pedidos consecutivos.
+          Zero para clientes com apenas 1 pedido (sem intervalo calculável).
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      # ── MONETÁRIO (M) ────────────────────────────────────────────────────────
+
+      - name: lifetime_revenue_brl
+        description: "Receita total acumulada do cliente (apenas pedidos entregues), em BRL."
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: avg_order_value_brl
+        description: "Ticket médio do cliente ao longo de toda a vida (pedidos entregues), em BRL."
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: max_order_value_brl
+        description: "Maior valor de pedido individual entregue pelo cliente, em BRL."
+
+      # ── JANELAS TEMPORAIS ─────────────────────────────────────────────────────
+
+      - name: orders_last_30d
+        description: "Pedidos entregues nos últimos 30 dias."
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: revenue_last_30d
+        description: "Receita de pedidos entregues nos últimos 30 dias, em BRL."
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: orders_last_60d
+        description: "Pedidos entregues nos últimos 60 dias."
+
+      - name: revenue_last_60d
+        description: "Receita de pedidos entregues nos últimos 60 dias, em BRL."
+
+      - name: orders_last_90d
+        description: "Pedidos entregues nos últimos 90 dias."
+
+      - name: revenue_last_90d
+        description: "Receita de pedidos entregues nos últimos 90 dias, em BRL."
+
+      # ── TENDÊNCIA ─────────────────────────────────────────────────────────────
+
+      - name: revenue_last_4w
+        description: "Receita das últimas 4 semanas (dias -28 a hoje), em BRL."
+
+      - name: revenue_prev_4w
+        description: "Receita das 4 semanas anteriores (dias -56 a -29), em BRL. Base de comparação para revenue_trend_pct."
+
+      - name: revenue_trend_pct
+        description: >
+          Variação percentual da receita: últimas 4 semanas vs 4 semanas anteriores.
+          Positivo = crescimento. Negativo = queda. NULL = sem histórico nas 4 semanas anteriores.
+          Fórmula: (revenue_last_4w - revenue_prev_4w) / revenue_prev_4w * 100
+
+      # ── DEVOLUÇÕES ────────────────────────────────────────────────────────────
+
+      - name: total_returned_orders
+        description: "Total de pedidos com status = 'returned' na vida do cliente."
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: total_returned_brl
+        description: "Valor total devolvido ao longo da vida do cliente, em BRL."
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: return_rate_pct
+        description: >
+          Taxa de devolução do cliente: (pedidos devolvidos / total de pedidos) * 100.
+          Clientes com return_rate_pct > 30 merecem análise manual.
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 100
+
+      # ── STATUS E FLAGS ────────────────────────────────────────────────────────
+
+      - name: activity_status
+        description: >
+          Status de atividade baseado em days_since_last_order:
+          active (≤30d) | at_risk (31-60d) | churning (61-90d) | churned (>90d)
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['active', 'at_risk', 'churning', 'churned']
+
+      - name: is_repeat_customer
+        description: "TRUE se o cliente tem mais de 1 pedido entregue."
+
+      - name: is_active_30d
+        description: "TRUE se o cliente fez ao menos 1 pedido entregue nos últimos 30 dias."
+
+      - name: has_returned
+        description: "TRUE se o cliente já devolveu ao menos 1 pedido."
+
+      # ── SCORES RFM ────────────────────────────────────────────────────────────
+
+      - name: r_score
+        description: >
+          Score de Recência (1–3): 3 = comprou recentemente, 1 = faz muito tempo.
+          Calculado via percentis p25/p75 da base — auto-ajustável.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3]
+
+      - name: f_score
+        description: >
+          Score de Frequência (1–3): 3 = compra com alta frequência.
+          Calculado via percentis p25/p75 da base.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3]
+
+      - name: m_score
+        description: >
+          Score Monetário (1–3): 3 = maior LTV.
+          Calculado via percentis p25/p75 da base.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3]
+
+      - name: segment
+        description: >
+          Segmento RFM do cliente. Baseado em combinação de R, F e M scores:
+          champions   — comprou recentemente, frequente, alto valor
+          loyal       — comprou recentemente, frequência acima da mediana
+          new_customer — comprou recentemente, apenas 1 pedido
+          promising   — frequência mediana, ainda com valor relevante
+          at_risk     — não compra há algum tempo, mas tem histórico
+          lost        — inativo e baixo histórico
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['champions', 'loyal', 'new_customer', 'promising', 'at_risk', 'lost']
+
+      # ── AUDITORIA ─────────────────────────────────────────────────────────────
+
+      - name: _generated_at
+        description: "Timestamp de quando esta linha foi gerada pelo dbt. Útil para auditoria no BI."
+        tests:
+          - not_null

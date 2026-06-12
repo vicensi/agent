@@ -1,0 +1,61 @@
+version: 2
+
+models:
+  - name: stg_ecommerce__orders
+    description: >
+      Pedidos limpos e deduplicados a partir do seed de e-commerce.
+      1 linha por order_id. Tipos castados, timestamps normalizados para UTC,
+      estados normalizados para sigla UF, status/canal/categoria em lower case.
+    columns:
+      - name: order_id
+        description: "PK — identificador único do pedido (ex: ORD-00036408)."
+        tests:
+          - not_null
+          - unique
+
+      - name: customer_id
+        description: "Identificador do cliente."
+        tests:
+          - not_null
+
+      - name: created_at
+        description: "Timestamp do pedido em UTC (timestamps naive da fonte assumidos como UTC)."
+        tests:
+          - not_null
+
+      - name: status
+        description: "Status do pedido, normalizado em lower case."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['aprovado', 'enviado', 'entregue', 'cancelado', 'aguardando_pagamento']
+
+      - name: quantity
+        description: "Quantidade de itens (valor absoluto — sinal negativo da fonte indicava devolução)."
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+
+      - name: discount_pct
+        description: "Percentual de desconto entre 0 e 100; valores impossíveis (>100) viram NULL."
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 100
+                inclusive: true
+
+      - name: total_amount_brl
+        description: "Valor total do pedido em BRL após desconto."
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: true
+
+      - name: customer_state
+        description: "UF do cliente normalizada (SP, RJ, MG...)."

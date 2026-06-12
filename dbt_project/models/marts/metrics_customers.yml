@@ -1,0 +1,225 @@
+version: 2
+
+# =============================================================================
+# SEMANTIC MODEL — customers_orders
+#
+# O semantic model é o "contrato de leitura" do MetricFlow.
+# Define quais colunas são entidades (joins), dimensões (filtros/grupos)
+# e medidas brutas (inputs das métricas).
+#
+# Todas as métricas abaixo derivam deste modelo.
+# Tabela de origem: marts.fct_orders
+# =============================================================================
+
+semantic_models:
+  - name: customers_orders
+    description: >
+      Modelo semântico de pedidos de clientes no e-commerce.
+      Grão: 1 linha por pedido (order_id).
+      Fonte: fct_orders — pedidos de todas as origens e status.
+      Use as dimensões status, channel e state para segmentar qualquer métrica.
+      ATENÇÃO: métricas de receita filtram internamente por status = 'delivered'.
+      Não aplique filtro de status manualmente — use as métricas nomeadas.
+
+    model: ref('fct_orders')
+
+    # Entidades — chaves para joins entre modelos semânticos
+    entities:
+      - name: order
+        type: primary
+        expr: order_id
+
+      - name: customer
+        type: foreign
+        expr: customer_id
+
+    # Dimensões — colunas disponíveis para filtrar e agrupar métricas
+    dimensions:
+      - name: created_date
+        type: time
+        type_params:
+          time_granularity: day
+        description: "Data de criação do pedido. Use para séries temporais diárias, semanais ou mensais."
+
+      - name: status
+        type: categorical
+        description: >
+          Status do pedido: pending, approved, shipped, delivered, cancelled, returned.
+          Métricas de receita já filtram por 'delivered' internamente — não duplique o filtro.
+
+      - name: channel
+        type: categorical
+        description: "Canal de origem do pedido: app_android, app_ios, site_desktop, site_mobile, marketplace."
+
+      - name: state
+        type: categorical
+        description: "Estado do cliente (UF). Use para análise geográfica de receita e volume."
+
+    # Medidas brutas — blocos de construção das métricas
+    measures:
+      - name: order_count
+        agg: count_distinct
+        expr: order_id
+        description: "Contagem de pedidos únicos. Não filtra por status — use métricas nomeadas para subconjuntos."
+
+      - name: delivered_revenue
+        agg: sum
+        expr: "CASE WHEN status = 'delivered' THEN total_amount_brl ELSE 0 END"
+        description: "Soma de total_amount_brl apenas para pedidos entregues. Base de todas as métricas de receita."
+
+      - name: returned_revenue
+        agg: sum
+        expr: "CASE WHEN status = 'returned' THEN total_amount_brl ELSE 0 END"
+        description: "Soma de total_amount_brl apenas para pedidos devolvidos. Usado para calcular receita líquida."
+
+      - name: customer_count
+        agg: count_distinct
+        expr: customer_id
+        description: "Contagem de clientes únicos com ao menos 1 pedido no período. Não filtra por status."
+
+
+# =============================================================================
+# MÉTRICAS
+#
+# Cada métrica referencia o semantic model acima.
+# As descriptions são propositalmente detalhadas — agentes de IA, dbt Copilot
+# e analistas novos lerão estas descriptions para entender o que calcular.
+# =============================================================================
+
+metrics:
+
+  # ── 1. RECEITA ENTREGUE ─────────────────────────────────────────────────────
+  - name: delivered_revenue
+    label: "Receita Entregue (BRL)"
+    description: >
+      Soma do valor total de pedidos com status = 'delivered', em BRL.
+      Esta é a métrica canônica de receita do negócio — use sempre que o contexto
+      for "quanto vendemos de verdade". Exclui pedidos pendentes, cancelados e devolvidos.
+      Grão mínimo: dia. Dimensões disponíveis: state, channel, status (redundante aqui).
+      ARMADILHA: não somar esta métrica com gross_revenue — os conjuntos se sobrepõem.
+    type: simple
+    type_params:
+      measure: delivered_revenue
+
+  # ── 2. RECEITA BRUTA (todos os pedidos aprovados ou acima) ──────────────────
+  - name: gross_revenue
+    label: "Receita Bruta (BRL)"
+    description: >
+      Soma do valor total de todos os pedidos com status IN ('approved', 'shipped', 'delivered').
+      Representa o volume financeiro comprometido — inclui pedidos ainda em trânsito.
+      Use quando quiser entender o pipeline de receita, não a receita realizada.
+      Para receita realizada, use delivered_revenue.
+      ARMADILHA: gross_revenue >= delivered_revenue sempre. Diferença = pedidos em trânsito.
+    type: simple
+    type_params:
+      measure: delivered_revenue   # reutilizamos a medida; filtro via where abaixo
+    filter: "{{ Dimension('order__status') }} IN ('approved', 'shipped', 'delivered')"
+
+  # ── 3. RECEITA LÍQUIDA (descontando devoluções) ─────────────────────────────
+  - name: net_revenue
+    label: "Receita Líquida (BRL)"
+    description: >
+      Receita entregue menos o valor total de pedidos devolvidos, em BRL.
+      Fórmula: delivered_revenue - returned_revenue.
+      Use quando quiser a receita real após estornos e devoluções.
+      Se net_revenue divergir muito de delivered_revenue, investigar return_rate.
+      ARMADILHA: devoluções podem ocorrer em mês diferente da compra (cross-month return).
+      Ao analisar por mês, o net_revenue de um mês pode cair por devoluções de compras anteriores.
+    type: derived
+    type_params:
+      expr: "delivered_revenue - returned_revenue"
+      metrics:
+        - name: delivered_revenue
+        - name: returned_revenue
+
+  # ── 4. RECEITA DEVOLVIDA ────────────────────────────────────────────────────
+  - name: returned_revenue
+    label: "Receita Devolvida (BRL)"
+    description: >
+      Soma do valor total de pedidos com status = 'returned', em BRL.
+      Use para monitorar impacto financeiro de devoluções.
+      Combine com order_count e delivered_revenue para calcular return_rate_pct manualmente
+      quando o MetricFlow não suportar a divisão diretamente.
+      ARMADILHA: o mês da devolução pode ser diferente do mês da compra.
+      Para análise de cohort de devolução, use a data do evento de devolução, não a data do pedido.
+    type: simple
+    type_params:
+      measure: returned_revenue
+
+  # ── 5. TOTAL DE PEDIDOS ENTREGUES ───────────────────────────────────────────
+  - name: delivered_orders
+    label: "Pedidos Entregues"
+    description: >
+      Contagem de pedidos únicos com status = 'delivered'.
+      Use como denominador para calcular ticket médio, taxa de devolução e conversão.
+      ARMADILHA: não usar order_count (que inclui todos os status) como denominador
+      quando o numerador for uma métrica de receita entregue — os conjuntos não batem.
+    type: simple
+    type_params:
+      measure: order_count
+    filter: "{{ Dimension('order__status') }} = 'delivered'"
+
+  # ── 6. TICKET MÉDIO ─────────────────────────────────────────────────────────
+  - name: avg_order_value
+    label: "Ticket Médio (BRL)"
+    description: >
+      Receita entregue dividida pelo número de pedidos entregues, em BRL.
+      Fórmula: delivered_revenue / delivered_orders.
+      Métrica central para acompanhar saúde do negócio — queda no ticket médio com
+      volume estável indica migração para produtos de menor valor ou excesso de desconto.
+      ARMADILHA: ticket médio é sensível a outliers (pedidos B2B de alto valor).
+      Se o ticket médio subir abruptamente, verificar se há pedidos atípicos no período.
+    type: derived
+    type_params:
+      expr: "delivered_revenue / NULLIF(delivered_orders, 0)"
+      metrics:
+        - name: delivered_revenue
+        - name: delivered_orders
+
+  # ── 7. CLIENTES ATIVOS (30 DIAS) ────────────────────────────────────────────
+  - name: active_customers_30d
+    label: "Clientes Ativos — últimos 30 dias"
+    description: >
+      Contagem de customer_id distintos com ao menos 1 pedido entregue nos últimos 30 dias.
+      Use para medir retenção de curto prazo e saúde da base ativa.
+      Compare com o total de clientes cadastrados para calcular taxa de ativação.
+      ARMADILHA: clientes que compraram há 31 dias saem desta métrica abruptamente.
+      Para tendências suaves, preferir uma janela de 60 ou 90 dias em análises de longo prazo.
+    type: simple
+    type_params:
+      measure: customer_count
+    filter: >
+      {{ Dimension('order__status') }} = 'delivered'
+      AND {{ TimeDimension('order__created_date', 'day') }}
+          >= DATEADD(day, -30, CURRENT_DATE())
+
+  # ── 8. TAXA DE DEVOLUÇÃO ────────────────────────────────────────────────────
+  - name: return_rate
+    label: "Taxa de Devolução (%)"
+    description: >
+      Percentual de pedidos devolvidos sobre o total de pedidos entregues.
+      Fórmula: (pedidos devolvidos / pedidos entregues) * 100.
+      Benchmarks típicos de e-commerce: fashion 20–30%, eletrônicos 5–10%, alimentos <2%.
+      Acima de 15% em qualquer categoria merece investigação de causa raiz.
+      ARMADILHA: devoluções têm lag — um pedido entregue em dezembro pode ser devolvido
+      em janeiro. Taxa calculada em janelas curtas tende a ser subestimada.
+      Para análise precisa, usar janela de 90 dias ou comparar cohorts de compra.
+    type: derived
+    type_params:
+      expr: >
+        CASE
+          WHEN delivered_orders = 0 THEN 0
+          ELSE (returned_orders / CAST(delivered_orders AS FLOAT64)) * 100
+        END
+      metrics:
+        - name: delivered_orders
+        - name: returned_orders
+
+  # Medida auxiliar para return_rate (pedidos devolvidos)
+  - name: returned_orders
+    label: "Pedidos Devolvidos"
+    description: "Contagem de pedidos com status = 'returned'. Usado como componente de return_rate."
+    type: simple
+    type_params:
+      measure: order_count
+    filter: "{{ Dimension('order__status') }} = 'returned'"

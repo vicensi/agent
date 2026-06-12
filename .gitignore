@@ -27,3 +27,14 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# dbt
+dbt_project/target/
+dbt_project/dbt_packages/
+dbt_project/logs/
+dbt_project/profiles.yml
+
+# Credenciais GCP
+secrets/
+*key.json
+projeto-agents-*.json
