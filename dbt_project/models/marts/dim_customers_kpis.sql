@@ -27,6 +27,7 @@
 -- ----------------------------------------------------------------------------
 -- BLOCO 1 — Base de pedidos entregues (única fonte de verdade para KPIs)
 -- Status em português conforme normalização do staging.
+
 -- ----------------------------------------------------------------------------
 with delivered_orders as (
     select
@@ -37,11 +38,13 @@ with delivered_orders as (
         status
     from {{ ref('fct_orders') }}
     where status = 'entregue'
+
 ),
 
 -- ----------------------------------------------------------------------------
 -- BLOCO 2 — Devoluções (separadas para não distorcer métricas de receita)
 -- A fonte não tem status 'returned' — devolução é capturada por has_return.
+
 -- ----------------------------------------------------------------------------
 returned_orders as (
     select
@@ -52,6 +55,7 @@ returned_orders as (
     from {{ ref('fct_orders') }}
     where has_return = true
       and return_amount_brl > 0
+
 ),
 
 -- ----------------------------------------------------------------------------
@@ -59,6 +63,7 @@ returned_orders as (
 -- A fonte é denormalizada (seed): não há tabela de clientes separada.
 -- Usamos dim_customers que já consolida 1 linha por customer_id.
 -- Campos customer_name/email/city não existem na fonte.
+
 -- ----------------------------------------------------------------------------
 customers as (
     select
@@ -215,6 +220,7 @@ consolidated as (
             ELSE CAST(ROUND(
                 (wm.revenue_last_4w - wm.revenue_prev_4w) / wm.revenue_prev_4w * 100
             , 1) AS FLOAT64)
+
         END                                             as revenue_trend_pct,
 
         -- ── DEVOLUÇÕES ──────────────────────────────────────────────────────
