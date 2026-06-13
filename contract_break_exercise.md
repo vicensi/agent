@@ -7,7 +7,7 @@
 
 ## Setup: garantir que o contrato está funcionando
 
-Com o arquivo `dim_customers_kpis_contract.yml` ativo, rode:
+Com o arquivo `dim_customers_kpis_schema.yml` ativo (contrato + testes unificados), rode:
 
 ```bash
 dbt build --select dim_customers_kpis --target prod

@@ -18,7 +18,7 @@ semantic_models:
       Grão: 1 linha por pedido (order_id).
       Fonte: fct_orders — pedidos de todas as origens e status.
       Use as dimensões status, channel e state para segmentar qualquer métrica.
-      ATENÇÃO: métricas de receita filtram internamente por status = 'delivered'.
+      ATENÇÃO: métricas de receita filtram internamente por status = 'entregue'.
       Não aplique filtro de status manualmente — use as métricas nomeadas.
 
     model: ref('fct_orders')
@@ -45,7 +45,7 @@ semantic_models:
         type: categorical
         description: >
           Status do pedido: pending, approved, shipped, delivered, cancelled, returned.
-          Métricas de receita já filtram por 'delivered' internamente — não duplique o filtro.
+          Métricas de receita já filtram por 'entregue' internamente — não duplique o filtro.
 
       - name: channel
         type: categorical
@@ -60,21 +60,25 @@ semantic_models:
       - name: order_count
         agg: count_distinct
         expr: order_id
+        agg_time_dimension: created_date
         description: "Contagem de pedidos únicos. Não filtra por status — use métricas nomeadas para subconjuntos."
 
       - name: delivered_revenue
         agg: sum
-        expr: "CASE WHEN status = 'delivered' THEN total_amount_brl ELSE 0 END"
-        description: "Soma de total_amount_brl apenas para pedidos entregues. Base de todas as métricas de receita."
+        expr: "CASE WHEN status = 'entregue' THEN total_amount_brl ELSE 0 END"
+        agg_time_dimension: created_date
+        description: "Soma de total_amount_brl apenas para pedidos com status = 'entregue'. Base de todas as métricas de receita."
 
       - name: returned_revenue
         agg: sum
-        expr: "CASE WHEN status = 'returned' THEN total_amount_brl ELSE 0 END"
-        description: "Soma de total_amount_brl apenas para pedidos devolvidos. Usado para calcular receita líquida."
+        expr: "CASE WHEN has_return = true THEN return_amount_brl ELSE 0 END"
+        agg_time_dimension: created_date
+        description: "Soma de return_amount_brl para pedidos com devolução (has_return = true). A fonte não tem status 'returned' — devolução é uma flag separada."
 
       - name: customer_count
         agg: count_distinct
         expr: customer_id
+        agg_time_dimension: created_date
         description: "Contagem de clientes únicos com ao menos 1 pedido no período. Não filtra por status."
 
 
@@ -92,7 +96,7 @@ metrics:
   - name: delivered_revenue
     label: "Receita Entregue (BRL)"
     description: >
-      Soma do valor total de pedidos com status = 'delivered', em BRL.
+      Soma do valor total de pedidos com status = 'entregue', em BRL.
       Esta é a métrica canônica de receita do negócio — use sempre que o contexto
       for "quanto vendemos de verdade". Exclui pedidos pendentes, cancelados e devolvidos.
       Grão mínimo: dia. Dimensões disponíveis: state, channel, status (redundante aqui).
@@ -105,7 +109,7 @@ metrics:
   - name: gross_revenue
     label: "Receita Bruta (BRL)"
     description: >
-      Soma do valor total de todos os pedidos com status IN ('approved', 'shipped', 'delivered').
+      Soma do valor total de todos os pedidos com status IN ('aprovado', 'enviado', 'entregue').
       Representa o volume financeiro comprometido — inclui pedidos ainda em trânsito.
       Use quando quiser entender o pipeline de receita, não a receita realizada.
       Para receita realizada, use delivered_revenue.
@@ -113,7 +117,7 @@ metrics:
     type: simple
     type_params:
       measure: delivered_revenue   # reutilizamos a medida; filtro via where abaixo
-    filter: "{{ Dimension('order__status') }} IN ('approved', 'shipped', 'delivered')"
+    filter: "{{ Dimension('order__status') }} IN ('aprovado', 'enviado', 'entregue')"
 
   # ── 3. RECEITA LÍQUIDA (descontando devoluções) ─────────────────────────────
   - name: net_revenue
@@ -136,11 +140,10 @@ metrics:
   - name: returned_revenue
     label: "Receita Devolvida (BRL)"
     description: >
-      Soma do valor total de pedidos com status = 'returned', em BRL.
+      Soma de return_amount_brl para pedidos com has_return = true, em BRL.
+      A fonte não tem status 'returned' — devolução é capturada pela flag has_return.
       Use para monitorar impacto financeiro de devoluções.
-      Combine com order_count e delivered_revenue para calcular return_rate_pct manualmente
-      quando o MetricFlow não suportar a divisão diretamente.
-      ARMADILHA: o mês da devolução pode ser diferente do mês da compra.
+      ARMADILHA: o mês da devolução pode ser diferente do mês da compra (cross-month return).
       Para análise de cohort de devolução, use a data do evento de devolução, não a data do pedido.
     type: simple
     type_params:
@@ -150,14 +153,14 @@ metrics:
   - name: delivered_orders
     label: "Pedidos Entregues"
     description: >
-      Contagem de pedidos únicos com status = 'delivered'.
+      Contagem de pedidos únicos com status = 'entregue'.
       Use como denominador para calcular ticket médio, taxa de devolução e conversão.
       ARMADILHA: não usar order_count (que inclui todos os status) como denominador
       quando o numerador for uma métrica de receita entregue — os conjuntos não batem.
     type: simple
     type_params:
       measure: order_count
-    filter: "{{ Dimension('order__status') }} = 'delivered'"
+    filter: "{{ Dimension('order__status') }} = 'entregue'"
 
   # ── 6. TICKET MÉDIO ─────────────────────────────────────────────────────────
   - name: avg_order_value
@@ -218,8 +221,8 @@ metrics:
   # Medida auxiliar para return_rate (pedidos devolvidos)
   - name: returned_orders
     label: "Pedidos Devolvidos"
-    description: "Contagem de pedidos com status = 'returned'. Usado como componente de return_rate."
+    description: "Contagem de pedidos com has_return = true. Usado como componente de return_rate. A fonte não tem status 'returned'."
     type: simple
     type_params:
       measure: order_count
-    filter: "{{ Dimension('order__status') }} = 'returned'"
+    filter: "{{ Dimension('order__has_return') }} = true"

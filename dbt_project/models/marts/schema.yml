@@ -157,13 +157,39 @@ models:
           - not_null
 
       - name: total_revenue_brl
-        description: "Soma de total_amount_brl dos pedidos do dia/canal."
+        description: "Soma de total_amount_brl dos pedidos do dia/canal (todos os status)."
         tests:
           - not_null
           - dbt_utils.accepted_range:
               arguments:
                 min_value: 0
                 inclusive: true
+
+      - name: delivered_revenue_brl
+        description: "Soma de delivered_revenue_brl — apenas pedidos com status = 'entregue'."
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: true
+
+      - name: return_amount_brl
+        description: "Soma de return_amount_brl — valor devolvido no dia/canal (limitado ao valor do pedido)."
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: true
+
+      - name: net_revenue_brl
+        description: "{{ doc('net_revenue_brl') }} Agregado por dia/canal."
+        tests:
+          - not_null
+
+      - name: avg_ticket_brl
+        description: "Ticket médio dos pedidos do dia/canal (total_amount_brl médio, todos os status)."
 
     tests:
       - dbt_utils.unique_combination_of_columns:

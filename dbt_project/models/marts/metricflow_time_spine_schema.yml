@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: metricflow_time_spine
+    description: >
+      Modelo de calendário diário exigido pelo MetricFlow.
+      Cobre 2019-01-01 a 2030-12-31 com granularidade DAY.
+      Não consumir diretamente — uso interno do MetricFlow para
+      resolver dimensões temporais nas métricas.
+    time_spine:
+      standard_granularity_column: date_day
+    columns:
+      - name: date_day
+        description: "Data no formato DATE. Chave primária do calendário."
+        granularity: day
+        tests:
+          - not_null
+          - unique

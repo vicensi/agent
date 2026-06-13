@@ -26,45 +26,53 @@
 
 -- ----------------------------------------------------------------------------
 -- BLOCO 1 — Base de pedidos entregues (única fonte de verdade para KPIs)
--- Cancelados e devolvidos entram em métricas separadas, não nas de receita.
+-- Status em português conforme normalização do staging.
+
 -- ----------------------------------------------------------------------------
 with delivered_orders as (
     select
         customer_id,
         order_id,
-        created_at,
-        DATE(created_at)        as order_date,
+        created_date            as order_date,
         total_amount_brl,
         status
     from {{ ref('fct_orders') }}
-    where status = 'delivered'
+    where status = 'entregue'
+
 ),
 
 -- ----------------------------------------------------------------------------
 -- BLOCO 2 — Devoluções (separadas para não distorcer métricas de receita)
+-- A fonte não tem status 'returned' — devolução é capturada por has_return.
+
 -- ----------------------------------------------------------------------------
 returned_orders as (
     select
         customer_id,
         order_id,
-        total_amount_brl        as returned_amount_brl,
-        DATE(created_at)        as order_date
+        return_amount_brl       as returned_amount_brl,
+        created_date            as order_date
     from {{ ref('fct_orders') }}
-    where status = 'returned'
+    where has_return = true
+      and return_amount_brl > 0
+
 ),
 
 -- ----------------------------------------------------------------------------
 -- BLOCO 3 — Dados cadastrais do cliente
+-- A fonte é denormalizada (seed): não há tabela de clientes separada.
+-- Usamos dim_customers que já consolida 1 linha por customer_id.
+-- Campos customer_name/email/city não existem na fonte.
+
 -- ----------------------------------------------------------------------------
 customers as (
     select
         customer_id,
-        customer_name,
-        email,
-        city,
-        state,
-        DATE(created_at)        as signup_date
-    from {{ ref('stg_postgres__customers') }}
+        customer_state          as state,
+        customer_zip,
+        first_order_at,
+        last_order_at
+    from {{ ref('dim_customers') }}
 ),
 
 -- ----------------------------------------------------------------------------
@@ -176,11 +184,8 @@ purchase_cadence as (
 consolidated as (
     select
         c.customer_id,
-        c.customer_name,
-        c.email,
-        c.city,
         c.state,
-        c.signup_date,
+        c.customer_zip,
 
         -- ── RECÊNCIA (R) ────────────────────────────────────────────────────
         lm.last_order_date,
@@ -212,9 +217,10 @@ consolidated as (
         COALESCE(wm.revenue_prev_4w, 0)                 as revenue_prev_4w,
         CASE
             WHEN COALESCE(wm.revenue_prev_4w, 0) = 0 THEN NULL
-            ELSE ROUND(
+            ELSE CAST(ROUND(
                 (wm.revenue_last_4w - wm.revenue_prev_4w) / wm.revenue_prev_4w * 100
-            , 1)
+            , 1) AS FLOAT64)
+
         END                                             as revenue_trend_pct,
 
         -- ── DEVOLUÇÕES ──────────────────────────────────────────────────────
@@ -222,9 +228,9 @@ consolidated as (
         COALESCE(rm.total_returned_brl,    0)           as total_returned_brl,
         CASE
             WHEN lm.total_orders = 0 THEN 0
-            ELSE ROUND(
+            ELSE LEAST(ROUND(
                 COALESCE(rm.total_returned_orders, 0) / lm.total_orders * 100
-            , 1)
+            , 1), 100.0)
         END                                             as return_rate_pct,
 
         -- ── STATUS DE ATIVIDADE ─────────────────────────────────────────────

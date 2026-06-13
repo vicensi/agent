@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--background, #0f1117);
+    color: var(--text-primary, #e8eaf0);
+    padding: 24px 16px;
+    min-height: 100vh;
+  }
+
+  h2.sr-only {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; overflow: hidden; clip: rect(0,0,0,0);
+    white-space: nowrap; border: 0;
+  }
+
+  .pipeline {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-secondary, #9ca3b0);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    text-align: center;
+  }
+
+  /* ── LAYERS ROW ─────────────────────────────────── */
+  .layers {
+    display: grid;
+    grid-template-columns: 1fr 40px 1fr 40px 1fr 40px 1fr;
+    align-items: start;
+    gap: 0;
+    margin-bottom: 36px;
+  }
+
+  .arrow-col {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 28px;
+  }
+
+  .arrow {
+    width: 36px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary, #9ca3b0);
+    font-size: 20px;
+  }
+
+  /* ── LAYER CARD ─────────────────────────────────── */
+  .layer {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,.08);
+  }
+
+  .layer-header {
+    padding: 10px 14px 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .layer-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+
+  .layer-title {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .layer-meta {
+    font-size: 10px;
+    color: var(--text-secondary, #9ca3b0);
+    padding: 0 14px 8px;
+  }
+
+  .layer-items {
+    padding: 0 10px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .item {
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: filter .15s;
+    border: 1px solid transparent;
+  }
+
+  .item:hover { filter: brightness(1.15); }
+
+  .item-name {
+    font-weight: 600;
+    margin-bottom: 1px;
+  }
+
+  .item-desc {
+    font-size: 10px;
+    opacity: .7;
+    line-height: 1.4;
+  }
+
+  /* ── COLOUR SCHEMES PER LAYER ───────────────────── */
+  .seed .layer-header    { background: #1a1f2e; }
+  .seed .layer-badge     { background: #2d3550; color: #8899cc; }
+  .seed .item            { background: #1e2438; border-color: #2d3550; }
+
+  .staging .layer-header { background: #141f1a; }
+  .staging .layer-badge  { background: #1c3028; color: #52c98a; }
+  .staging .item         { background: #172420; border-color: #213d30; }
+
+  .marts .layer-header   { background: #1a1520; }
+  .marts .layer-badge    { background: #2d1e42; color: #c084fc; }
+  .marts .item           { background: #1e1828; border-color: #362448; color: #e2d4f8; }
+  .marts .item-desc      { color: #b09fd4; }
+
+  .metrics .layer-header { background: #1c1710; }
+  .metrics .layer-badge  { background: #352808; color: #f4a83a; }
+  .metrics .item         { background: #221a0e; border-color: #3d2f10; color: #f5d9a8; }
+  .metrics .item-desc    { color: #c4a870; }
+
+  /* ── DETAIL PANEL ───────────────────────────────── */
+  .detail-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 36px;
+  }
+
+  .detail-card {
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,.08);
+    overflow: hidden;
+  }
+
+  .detail-header {
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .detail-header.contract { background: #1a1520; color: #c084fc; }
+  .detail-header.tests    { background: #0f1f1a; color: #52c98a; }
+  .detail-header.metricflow { background: #1c1710; color: #f4a83a; }
+  .detail-header.flow     { background: #101828; color: #7cb4f0; }
+
+  .detail-body {
+    padding: 10px 14px 14px;
+    font-size: 11px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .rule {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    padding: 5px 8px;
+    border-radius: 6px;
+    background: rgba(255,255,255,.04);
+    line-height: 1.5;
+  }
+
+  .rule-icon { flex-shrink: 0; }
+
+  /* ── FLOW CHART ─────────────────────────────────── */
+  .flow-chart {
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .flow-step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+  }
+
+  .flow-connector {
+    width: 1px;
+    height: 10px;
+    background: rgba(255,255,255,.2);
+    margin-left: 18px;
+  }
+
+  /* ── LEGEND ─────────────────────────────────────── */
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    font-size: 10px;
+    color: var(--text-secondary, #9ca3b0);
+    padding-top: 4px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* ── TOOLTIP ─────────────────────────────────────── */
+  #tooltip {
+    position: fixed;
+    background: #1e2430;
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 11px;
+    max-width: 260px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .15s;
+    z-index: 999;
+    line-height: 1.55;
+  }
+
+  #tooltip.visible { opacity: 1; }
+  #tooltip strong { display: block; margin-bottom: 4px; font-size: 12px; color: #e8eaf0; }
+</style>
+</head>
+<body>
+
+<h2 class="sr-only">Diagrama do pipeline dbt: seed → staging → marts → MetricFlow, com contratos e testes por camada</h2>
+<div id="tooltip"></div>
+
+<div class="pipeline">
+  <div class="title">Pipeline dbt — E-commerce Analytics</div>
+
+  <!-- ── LAYERS ─────────────────────────────── -->
+  <div class="layers">
+
+    <!-- SEED -->
+    <div class="layer seed">
+      <div class="layer-header">
+        <span class="layer-badge">Seed</span>
+        <span class="layer-title">Raw</span>
+      </div>
+      <div class="layer-meta">BigQuery dataset: raw · view</div>
+      <div class="layer-items">
+        <div class="item" data-tip="seed_ecommerce_sintetico" data-desc="~192k linhas · CSV denormalizado com armadilhas: duplicatas, fusos misturados, estados sujos, devoluções cross-month">
+          <div class="item-name">seed_ecommerce_sintetico</div>
+          <div class="item-desc">CSV · ~192k linhas · armadilhas intencionais</div>
+        </div>
+        <div class="item" data-tip="sources.yml" data-desc="Declara a source seed_raw com freshness: warn 6h / error 24h. Staging lê SOMENTE via source() — nunca ref() direto.">
+          <div class="item-name">sources.yml</div>
+          <div class="item-desc">freshness: warn 6h / error 24h</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-col"><div class="arrow">→</div></div>
+
+    <!-- STAGING -->
+    <div class="layer staging">
+      <div class="layer-header">
+        <span class="layer-badge">Staging</span>
+        <span class="layer-title">Limpeza</span>
+      </div>
+      <div class="layer-meta">BigQuery dataset: staging · view</div>
+      <div class="layer-items">
+        <div class="item" data-tip="stg_ecommerce__orders" data-desc="Responsabilidades: dedup (ROW_NUMBER por order_id), SAFE_CAST timestamps, normalize_estado, abs(quantidade), desconto > 100 → NULL, status/canal em lower case. Proibido: joins, agregações, lógica de negócio.">
+          <div class="item-name">stg_ecommerce__orders</div>
+          <div class="item-desc">dedup · cast · normalize_estado · sanidade</div>
+        </div>
+        <div class="item" data-tip="schema.yml (staging)" data-desc="Testes: not_null + unique em order_id; not_null em customer_id, created_at, status, total_amount_brl; accepted_values para status (5 valores em pt-BR); accepted_range para quantity, discount_pct, total_amount_brl.">
+          <div class="item-name">schema.yml</div>
+          <div class="item-desc">6 not_null · accepted_values · accepted_range</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-col"><div class="arrow">→</div></div>
+
+    <!-- MARTS -->
+    <div class="layer marts">
+      <div class="layer-header">
+        <span class="layer-badge">Marts</span>
+        <span class="layer-title">Negócio</span>
+      </div>
+      <div class="layer-meta">BigQuery dataset: marts · table</div>
+      <div class="layer-items">
+        <div class="item" data-tip="fct_orders" data-desc="1 linha por order_id. Colunas derivadas: delivered_revenue_brl (status = 'entregue'), return_amount_brl (LEAST para evitar devolução > pedido), net_revenue_brl, is_cross_month_return. Cluster: created_date.">
+          <div class="item-name">fct_orders</div>
+          <div class="item-desc">1 linha / pedido · receita · devoluções</div>
+        </div>
+        <div class="item" data-tip="dim_customers" data-desc="1 linha por customer_id. Derivada dos pedidos (fonte não tem cadastro). Estado e CEP do pedido mais recente. Métricas: total_orders, lifetime_value_brl, total_returns.">
+          <div class="item-name">dim_customers</div>
+          <div class="item-desc">1 linha / cliente · LTV · pedido recente</div>
+        </div>
+        <div class="item" data-tip="dim_products" data-desc="1 linha por product_name. Derivada dos pedidos. Métricas: min/avg/max unit_price, total_units_sold, total_revenue_brl.">
+          <div class="item-name">dim_products</div>
+          <div class="item-desc">1 linha / produto · preço · volume</div>
+        </div>
+        <div class="item" data-tip="agg_daily_revenue" data-desc="1 linha por created_date × channel. Métricas: total_revenue_brl, delivered_revenue_brl, return_amount_brl, net_revenue_brl, avg_ticket_brl. Fonte principal dos dashboards Looker Studio.">
+          <div class="item-name">agg_daily_revenue</div>
+          <div class="item-desc">dia × canal · 5 métricas · Looker Studio</div>
+        </div>
+        <div class="item" data-tip="dim_customers_kpis" data-desc="1 linha por customer_id. KPIs: RFM scores (1–3), segmento (champions/loyal/new_customer/promising/at_risk/lost), janelas 30/60/90d, tendência 4w vs 4w anterior, taxa de devolução. contract: enforced com data_type em todas as colunas.">
+          <div class="item-name">dim_customers_kpis ★</div>
+          <div class="item-desc">RFM · segmento · janelas temporais · contrato</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-col"><div class="arrow">→</div></div>
+
+    <!-- METRICFLOW -->
+    <div class="layer metrics">
+      <div class="layer-header">
+        <span class="layer-badge">MetricFlow</span>
+        <span class="layer-title">Semântica</span>
+      </div>
+      <div class="layer-meta">Camada semântica dbt · lê fct_orders</div>
+      <div class="layer-items">
+        <div class="item" data-tip="delivered_revenue" data-desc="SUM(total_amount_brl WHERE status = 'entregue'). Métrica canônica de receita. Não somar com gross_revenue — conjuntos se sobrepõem.">
+          <div class="item-name">delivered_revenue</div>
+          <div class="item-desc">SUM · status = 'entregue'</div>
+        </div>
+        <div class="item" data-tip="gross_revenue" data-desc="SUM(total_amount_brl) para status IN ('aprovado', 'enviado', 'entregue'). Pipeline de receita comprometida. Sempre >= delivered_revenue.">
+          <div class="item-name">gross_revenue</div>
+          <div class="item-desc">aprovado + enviado + entregue</div>
+        </div>
+        <div class="item" data-tip="net_revenue" data-desc="delivered_revenue - returned_revenue. Métrica derivada. Atenção: devolução cross-month pode fazer net_revenue de um mês cair por devoluções de meses anteriores.">
+          <div class="item-name">net_revenue</div>
+          <div class="item-desc">delivered − returned · derivada</div>
+        </div>
+        <div class="item" data-tip="avg_order_value" data-desc="delivered_revenue / NULLIF(delivered_orders, 0). Sensível a outliers B2B. Queda com volume estável = excesso de desconto ou mix para produtos baratos.">
+          <div class="item-name">avg_order_value</div>
+          <div class="item-desc">ticket médio · derivada</div>
+        </div>
+        <div class="item" data-tip="return_rate" data-desc="(returned_orders / delivered_orders) * 100. Benchmarks: fashion 20-30%, eletrônicos 5-10%. Calculado em janelas curtas é subestimado (lag de 45 dias).">
+          <div class="item-name">return_rate</div>
+          <div class="item-desc">% devoluções · lag 45d</div>
+        </div>
+        <div class="item" data-tip="active_customers_30d" data-desc="COUNT DISTINCT customer_id com pedido entregue nos últimos 30 dias. Janela deslizante — cai abruptamente no dia 31 para quem comprou exatamente 30 dias atrás.">
+          <div class="item-name">active_customers_30d</div>
+          <div class="item-desc">clientes ativos · janela 30d</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── DETAIL ROW ──────────────────────────── -->
+  <div class="detail-row">
+
+    <!-- CONTRACT -->
+    <div class="detail-card">
+      <div class="detail-header contract">🔒 contract: enforced — dim_customers_kpis</div>
+      <div class="detail-body">
+        <div class="rule"><span class="rule-icon">✓</span><span>Toda coluna declarada com <strong>data_type</strong> explícito (int64, float64, numeric, string, boolean, date, timestamp)</span></div>
+        <div class="rule"><span class="rule-icon">✓</span><span>Coluna removida do SQL → <strong>ContractError</strong> antes de materializar</span></div>
+        <div class="rule"><span class="rule-icon">✓</span><span>Tipo alterado (ex: int64 → string) → build falha imediatamente</span></div>
+        <div class="rule"><span class="rule-icon">⚠</span><span>Coluna nova adicionada <em>sem</em> declarar no contrato → build passa (contrato é mínimo garantido, não lista fechada)</span></div>
+        <div class="rule"><span class="rule-icon">ℹ</span><span>Só funciona com <code>materialized: table</code> ou <code>incremental</code> — não em views</span></div>
+      </div>
+    </div>
+
+    <!-- TESTS -->
+    <div class="detail-card">
+      <div class="detail-header tests">✓ Testes dbt por camada</div>
+      <div class="detail-body">
+        <div class="rule"><span class="rule-icon" style="color:#52c98a">●</span><span><strong>Staging:</strong> not_null + unique em PKs · accepted_values (5 status pt-BR) · accepted_range (quantity > 0, discount 0–100)</span></div>
+        <div class="rule"><span class="rule-icon" style="color:#c084fc">●</span><span><strong>fct_orders:</strong> PK + unique · relationships → dim_customers, dim_products · accepted_values (status) · accepted_range (≥ 0) em todos os valores monetários</span></div>
+        <div class="rule"><span class="rule-icon" style="color:#c084fc">●</span><span><strong>dim_customers / dim_products:</strong> PK not_null + unique · accepted_range em LTV e total_revenue</span></div>
+        <div class="rule"><span class="rule-icon" style="color:#c084fc">●</span><span><strong>agg_daily_revenue:</strong> unique_combination_of_columns (date × channel) · not_null em 5 colunas · accepted_range ≥ 0</span></div>
+        <div class="rule"><span class="rule-icon" style="color:#c084fc">●</span><span><strong>dim_customers_kpis:</strong> constraints + accepted_values (activity_status, segment, r/f/m_score) · accepted_range em todas as métricas numéricas</span></div>
+      </div>
+    </div>
+
+    <!-- METRICFLOW DETAIL -->
+    <div class="detail-card">
+      <div class="detail-header metricflow">📐 MetricFlow — semantic_model: customers_orders</div>
+      <div class="detail-body">
+        <div class="rule"><span class="rule-icon">🔑</span><span><strong>Entidades:</strong> order (primary · order_id) · customer (foreign · customer_id)</span></div>
+        <div class="rule"><span class="rule-icon">📅</span><span><strong>Dimensão temporal:</strong> created_date · granularidade: day → semana / mês / trimestre</span></div>
+        <div class="rule"><span class="rule-icon">🏷</span><span><strong>Dimensões categóricas:</strong> status · channel · state (UF)</span></div>
+        <div class="rule"><span class="rule-icon">📦</span><span><strong>Medidas brutas:</strong> order_count (count_distinct) · delivered_revenue (sum) · returned_revenue (sum) · customer_count (count_distinct)</span></div>
+        <div class="rule"><span class="rule-icon">📊</span><span><strong>Métricas derivadas:</strong> net_revenue · avg_order_value · return_rate — calculadas sobre as medidas brutas</span></div>
+      </div>
+    </div>
+
+    <!-- FLOW -->
+    <div class="detail-card">
+      <div class="detail-header flow">→ Fluxo de dependência</div>
+      <div class="flow-chart">
+        <div class="flow-step" style="background:#1e2438; border-radius:6px;">
+          <span style="color:#8899cc">⬡</span>
+          <span><strong>seed_ecommerce_sintetico</strong> — CSV raw</span>
+        </div>
+        <div class="flow-connector"></div>
+        <div class="flow-step" style="background:#172420; border-radius:6px;">
+          <span style="color:#52c98a">⬡</span>
+          <span><strong>stg_ecommerce__orders</strong> — source() → limpeza</span>
+        </div>
+        <div class="flow-connector"></div>
+        <div class="flow-step" style="background:#1e1828; border-radius:6px;">
+          <span style="color:#c084fc">⬡</span>
+          <span><strong>dim_customers</strong> + <strong>dim_products</strong> — ref(stg)</span>
+        </div>
+        <div class="flow-connector"></div>
+        <div class="flow-step" style="background:#1e1828; border-radius:6px;">
+          <span style="color:#c084fc">⬡</span>
+          <span><strong>fct_orders</strong> — ref(stg) + ref(dim_customers)</span>
+        </div>
+        <div class="flow-connector"></div>
+        <div class="flow-step" style="background:#1e1828; border-radius:6px;">
+          <span style="color:#c084fc">⬡</span>
+          <span><strong>agg_daily_revenue</strong> · <strong>dim_customers_kpis</strong> — ref(fct)</span>
+        </div>
+        <div class="flow-connector"></div>
+        <div class="flow-step" style="background:#221a0e; border-radius:6px;">
+          <span style="color:#f4a83a">⬡</span>
+          <span><strong>MetricFlow</strong> — lê fct_orders via semantic_model</span>
+        </div>
+        <div class="flow-connector"></div>
+        <div class="flow-step" style="background:#101828; border-radius:6px;">
+          <span style="color:#7cb4f0">⬡</span>
+          <span><strong>Looker Studio</strong> — agent_readonly → marts only</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- LEGEND -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#8899cc"></div> Raw / Seed</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#52c98a"></div> Staging (views)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#c084fc"></div> Marts (tables)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f4a83a"></div> MetricFlow</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#7cb4f0"></div> Consumo (Looker Studio)</div>
+    <div class="legend-item" style="margin-left:8px">★ contract: enforced</div>
+    <div class="legend-item">· passe o mouse nos cards para detalhes</div>
+  </div>
+
+</div>
+
+<script>
+  const tip = document.getElementById('tooltip');
+
+  document.querySelectorAll('[data-tip]').forEach(el => {
+    el.addEventListener('mouseenter', e => {
+      const name = el.dataset.tip;
+      const desc = el.dataset.desc;
+      tip.innerHTML = `<strong>${name}</strong>${desc}`;
+      tip.classList.add('visible');
+    });
+    el.addEventListener('mousemove', e => {
+      const x = e.clientX + 16;
+      const y = e.clientY + 10;
+      tip.style.left = Math.min(x, window.innerWidth - 280) + 'px';
+      tip.style.top  = y + 'px';
+    });
+    el.addEventListener('mouseleave', () => {
+      tip.classList.remove('visible');
+    });
+  });
+</script>
+</body>
+</html>
