@@ -12,6 +12,7 @@ models:
     columns:
       - name: date_day
         description: "Data no formato DATE. Chave primária do calendário."
+        granularity: day
         tests:
           - not_null
           - unique

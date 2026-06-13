@@ -215,7 +215,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ['active', 'at_risk', 'churning', 'churned']
+              arguments:
+                values: ['active', 'at_risk', 'churning', 'churned']
 
       - name: is_repeat_customer
         data_type: boolean
@@ -241,7 +242,9 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: [1, 2, 3]
+              arguments:
+                values: [1, 2, 3]
+                quote: false
 
       - name: f_score
         data_type: int64
@@ -253,7 +256,9 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: [1, 2, 3]
+              arguments:
+                values: [1, 2, 3]
+                quote: false
 
       - name: m_score
         data_type: int64
@@ -265,7 +270,9 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: [1, 2, 3]
+              arguments:
+                values: [1, 2, 3]
+                quote: false
 
       - name: segment
         data_type: string
@@ -276,7 +283,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ['champions', 'loyal', 'new_customer', 'promising', 'at_risk', 'lost']
+              arguments:
+                values: ['champions', 'loyal', 'new_customer', 'promising', 'at_risk', 'lost']
 
       # ── AUDITORIA ─────────────────────────────────────────────────────────────
 

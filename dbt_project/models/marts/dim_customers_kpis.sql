@@ -212,9 +212,9 @@ consolidated as (
         COALESCE(wm.revenue_prev_4w, 0)                 as revenue_prev_4w,
         CASE
             WHEN COALESCE(wm.revenue_prev_4w, 0) = 0 THEN NULL
-            ELSE ROUND(
+            ELSE CAST(ROUND(
                 (wm.revenue_last_4w - wm.revenue_prev_4w) / wm.revenue_prev_4w * 100
-            , 1)
+            , 1) AS FLOAT64)
         END                                             as revenue_trend_pct,
 
         -- ── DEVOLUÇÕES ──────────────────────────────────────────────────────
@@ -222,9 +222,9 @@ consolidated as (
         COALESCE(rm.total_returned_brl,    0)           as total_returned_brl,
         CASE
             WHEN lm.total_orders = 0 THEN 0
-            ELSE ROUND(
+            ELSE LEAST(ROUND(
                 COALESCE(rm.total_returned_orders, 0) / lm.total_orders * 100
-            , 1)
+            , 1), 100.0)
         END                                             as return_rate_pct,
 
         -- ── STATUS DE ATIVIDADE ─────────────────────────────────────────────

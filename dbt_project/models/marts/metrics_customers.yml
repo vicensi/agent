@@ -60,21 +60,25 @@ semantic_models:
       - name: order_count
         agg: count_distinct
         expr: order_id
+        agg_time_dimension: created_date
         description: "Contagem de pedidos únicos. Não filtra por status — use métricas nomeadas para subconjuntos."
 
       - name: delivered_revenue
         agg: sum
         expr: "CASE WHEN status = 'entregue' THEN total_amount_brl ELSE 0 END"
+        agg_time_dimension: created_date
         description: "Soma de total_amount_brl apenas para pedidos com status = 'entregue'. Base de todas as métricas de receita."
 
       - name: returned_revenue
         agg: sum
         expr: "CASE WHEN has_return = true THEN return_amount_brl ELSE 0 END"
+        agg_time_dimension: created_date
         description: "Soma de return_amount_brl para pedidos com devolução (has_return = true). A fonte não tem status 'returned' — devolução é uma flag separada."
 
       - name: customer_count
         agg: count_distinct
         expr: customer_id
+        agg_time_dimension: created_date
         description: "Contagem de clientes únicos com ao menos 1 pedido no período. Não filtra por status."
 
 
