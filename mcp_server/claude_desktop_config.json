@@ -1,0 +1,18 @@
+{
+  "_comment": "Cole este bloco dentro de mcpServers no seu claude_desktop_config.json.",
+  "_location_macos": "~/Library/Application Support/Claude/claude_desktop_config.json",
+  "_location_windows": "%APPDATA%\\Claude\\claude_desktop_config.json",
+
+  "mcpServers": {
+    "ecommerce-data-platform": {
+      "command": "/Users/pedro/Documents/Projetos/agent-create-v2/.venv/bin/python",
+      "args": [
+        "/Users/pedro/Documents/Projetos/agent-create-v2/mcp_server/server.py"
+      ],
+      "env": {
+        "GCP_PROJECT_ID": "projeto-agents-499023",
+        "GCP_KEYFILE_PATH": "/Users/pedro/Documents/Projetos/agent-create-v2/projeto-agents-499023-94971d9081c3.json"
+      }
+    }
+  }
+}

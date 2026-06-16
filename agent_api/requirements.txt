@@ -1,0 +1,17 @@
+# Agent API — Fase 4
+# FastAPI + Claude API + integração com mcp_server
+
+# Framework web async — gera /docs automático (OpenAPI)
+fastapi>=0.111.0
+
+# Servidor ASGI para rodar FastAPI
+uvicorn[standard]>=0.29.0
+
+# SDK oficial da Anthropic para tool use
+anthropic>=0.28.0
+
+# Validação de dados e serialização das requests/responses
+pydantic>=2.0.0
+
+# Variáveis de ambiente
+python-dotenv>=1.0.0

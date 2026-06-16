@@ -81,6 +81,17 @@ dbt docs generate && dbt docs serve --port 8080
   Status válidos: `aprovado, enviado, entregue, cancelado, aguardando_pagamento`.
 - **Docs**: `description` em todo mart, PK, FK e métrica; métricas complexas em
   `docs/metrics.md` com `{% docs %}` e referenciadas via `{{ doc(...) }}`.
+- **Métricas aditivas vs não-aditivas**: campos do tipo SUM e COUNT são aditivos —
+  podem ser re-agregados livremente no Looker Studio ou em qualquer BI. Campos do tipo
+  AVG, ratio ou % pré-calculados são **não-aditivos** — re-agregar no Looker gera
+  "média de médias" (resultado errado). Regras:
+  - Guardar sempre o numerador e denominador separados (ex: `total_revenue_brl` +
+    `total_orders`) para que o BI reconstrua o AVG corretamente via campo calculado.
+  - Documentar campos não-aditivos com `meta: {bi_aggregation: "non_additive"}` e
+    instrução de uso no `schema.yml`.
+  - Campos com `CURRENT_DATE()` em modelos materializados são proibidos em marts
+    consumidos por BI — o valor congela no momento do `dbt run` e diverge com dados
+    históricos. Use filtro de período no Looker em vez disso.
 - **Segurança**: nenhuma credencial hardcoded (tudo `env_var()`); `profiles.yml`,
   `secrets/` e `*key.json` gitignored; Looker Studio/analistas só enxergam `marts`
   via SA `agent_readonly` (`docs/setup_gcp.md`).

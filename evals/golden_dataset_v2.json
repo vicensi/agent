@@ -1,0 +1,257 @@
+[
+  {
+    "id": "V2-E01",
+    "category": "metric_simple",
+    "question": "Qual a receita entregue total de toda a história?",
+    "expected_tools": ["query_metric"],
+    "expected_metric": "delivered_revenue",
+    "expected_period": null,
+    "must_cite_source": true,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Resposta contém um valor monetário em BRL (deve ser aproximadamente R$ 295 milhões)",
+      "Menciona que é receita de pedidos com status entregue",
+      "Cita a ferramenta ou SQL usado como fonte"
+    ]
+  },
+  {
+    "id": "V2-E02",
+    "category": "metric_with_dimension",
+    "question": "Qual a receita entregue por canal de vendas?",
+    "expected_tools": ["query_metric"],
+    "expected_metric": "delivered_revenue",
+    "expected_dimensions": ["channel"],
+    "expected_period": null,
+    "must_cite_source": true,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Resposta lista múltiplos canais (deve incluir app_ios, app_android, marketplace, web variants)",
+      "Cada canal tem um valor de receita associado em BRL",
+      "Cita ferramenta e SQL ou métrica como fonte"
+    ]
+  },
+  {
+    "id": "V2-E03",
+    "category": "metric_with_dimension",
+    "question": "Qual o ticket médio por canal de vendas?",
+    "expected_tools": ["query_metric"],
+    "expected_metric": "avg_order_value",
+    "expected_dimensions": ["channel"],
+    "expected_period": null,
+    "must_cite_source": true,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Resposta apresenta valores de ticket médio para cada canal",
+      "Valores são numéricos em BRL",
+      "Cita fonte"
+    ]
+  },
+  {
+    "id": "V2-E04",
+    "category": "metric_with_dimension",
+    "question": "Qual a taxa de devolução por canal? Algum canal se destaca negativamente?",
+    "expected_tools": ["query_metric"],
+    "expected_metric": "return_rate",
+    "expected_dimensions": ["channel"],
+    "expected_period": null,
+    "must_cite_source": true,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Apresenta taxa de devolução por canal com valores percentuais",
+      "Identifica qual canal tem maior taxa ou comenta sobre a distribuição",
+      "Cita fonte"
+    ]
+  },
+  {
+    "id": "V2-E05",
+    "category": "metric_with_dimension",
+    "question": "Qual a receita entregue por estado do cliente? Mostra os top 10.",
+    "expected_tools": ["query_metric"],
+    "expected_metric": "delivered_revenue",
+    "expected_dimensions": ["customer_state"],
+    "expected_period": null,
+    "must_cite_source": true,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Resposta lista estados brasileiros (siglas como SP, RJ, MG, etc.)",
+      "Apresenta valores de receita por estado",
+      "Cita fonte"
+    ]
+  },
+  {
+    "id": "V2-E06",
+    "category": "metric_with_dimension",
+    "question": "Qual a receita entregue por categoria de produto?",
+    "expected_tools": ["query_metric"],
+    "expected_metric": "delivered_revenue",
+    "expected_dimensions": ["product_category"],
+    "expected_period": null,
+    "must_cite_source": true,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Resposta lista categorias de produto com receita associada",
+      "Valores em BRL",
+      "Cita fonte"
+    ]
+  },
+  {
+    "id": "V2-E07",
+    "category": "metric_comparison",
+    "question": "Compare a receita bruta com a receita líquida total. Quanto foi perdido em devoluções?",
+    "expected_tools": ["query_metric"],
+    "must_cite_source": true,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Apresenta valor da receita bruta e líquida com números reais",
+      "Calcula ou estima a diferença absoluta ou percentual entre as duas",
+      "Menciona que a diferença representa devoluções",
+      "Cita fonte"
+    ]
+  },
+  {
+    "id": "V2-E08",
+    "category": "catalog_first",
+    "question": "Quais métricas estão disponíveis e o que cada uma mede?",
+    "expected_tools": ["list_metrics"],
+    "must_cite_source": false,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Lista pelo menos 5 das 8 métricas disponíveis",
+      "Para cada métrica mencionada, descreve o que ela mede",
+      "Diferencia receita entregue de receita bruta e líquida"
+    ]
+  },
+  {
+    "id": "V2-E09",
+    "category": "sql_custom",
+    "question": "Quantos pedidos únicos existem no total e qual o valor médio por pedido?",
+    "expected_tools": ["run_sql_readonly"],
+    "must_cite_source": true,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Apresenta o número total de pedidos (deve ser próximo de 192k)",
+      "Apresenta um valor médio de pedido em BRL",
+      "Cita o SQL executado como fonte"
+    ]
+  },
+  {
+    "id": "V2-E10",
+    "category": "sql_custom",
+    "question": "Quais os 5 produtos mais vendidos em receita entregue?",
+    "expected_tools": ["query_metric", "run_sql_readonly"],
+    "must_cite_source": true,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Lista pelo menos 3 produtos com receita associada",
+      "Valores em BRL",
+      "Cita fonte (SQL ou query_metric)"
+    ]
+  },
+  {
+    "id": "V2-E11",
+    "category": "sql_custom",
+    "question": "Qual a proporção de pedidos por status (entregue, cancelado, enviado, etc.)?",
+    "expected_tools": ["run_sql_readonly"],
+    "must_cite_source": true,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Lista múltiplos status de pedido com contagem ou percentual",
+      "Inclui pelo menos: entregue, cancelado, aguardando_pagamento",
+      "Cita SQL executado como fonte"
+    ]
+  },
+  {
+    "id": "V2-E12",
+    "category": "sql_custom",
+    "question": "Quantos clientes únicos temos no total?",
+    "expected_tools": ["query_metric", "run_sql_readonly"],
+    "must_cite_source": true,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Apresenta um número total de clientes únicos",
+      "Cita fonte"
+    ]
+  },
+  {
+    "id": "V2-E13",
+    "category": "lineage",
+    "question": "De onde vêm os dados de receita? Quais transformações o pipeline faz antes de chegar nos marts?",
+    "expected_tools": ["get_lineage"],
+    "must_cite_source": false,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Menciona que a origem é um CSV seed com dados sintéticos",
+      "Menciona camada staging (limpeza, dedup, cast, normalização)",
+      "Menciona que marts aplica joins e calcula métricas de negócio"
+    ]
+  },
+  {
+    "id": "V2-E14",
+    "category": "refusal_out_of_scope",
+    "question": "Qual vai ser a receita do próximo trimestre?",
+    "expected_tools": [],
+    "must_cite_source": false,
+    "should_refuse": true,
+    "judge_criteria": [
+      "Agente recusa fazer previsão futura sem base estatística",
+      "Explica o que pode fazer (análise histórica, tendências)",
+      "Não inventa um valor de previsão"
+    ]
+  },
+  {
+    "id": "V2-E15",
+    "category": "refusal_out_of_scope",
+    "question": "Quem é o gerente de vendas responsável pelo canal marketplace?",
+    "expected_tools": [],
+    "must_cite_source": false,
+    "should_refuse": true,
+    "judge_criteria": [
+      "Agente recusa pois não tem dados de estrutura organizacional",
+      "Explica que o escopo é análise de dados de e-commerce (pedidos, receita, clientes)",
+      "Não inventa um nome de responsável"
+    ]
+  },
+  {
+    "id": "V2-E16",
+    "category": "metric_with_dimension",
+    "question": "Qual a receita entregue por canal E por categoria de produto juntos?",
+    "expected_tools": ["query_metric", "run_sql_readonly"],
+    "expected_metric": "delivered_revenue",
+    "expected_dimensions": ["channel", "product_category"],
+    "expected_period": null,
+    "must_cite_source": true,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Resposta apresenta combinação de canais com categorias de produto",
+      "Valores de receita para cada combinação canal+categoria",
+      "Cita fonte"
+    ]
+  },
+  {
+    "id": "V2-E17",
+    "category": "metric_simple",
+    "question": "Quantos pedidos foram entregues no total?",
+    "expected_tools": ["query_metric"],
+    "expected_metric": "delivered_orders",
+    "expected_period": null,
+    "must_cite_source": true,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Apresenta número de pedidos entregues (inteiro)",
+      "Cita fonte"
+    ]
+  },
+  {
+    "id": "V2-E18",
+    "category": "sql_custom",
+    "question": "Qual o valor total devolvido e quantos pedidos tiveram devolução?",
+    "expected_tools": ["query_metric", "run_sql_readonly"],
+    "must_cite_source": true,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Apresenta valor total devolvido em BRL",
+      "Apresenta ou infere o número de pedidos com devolução",
+      "Cita fonte"
+    ]
+  }
+]

@@ -81,6 +81,25 @@ semantic_models:
         agg_time_dimension: created_date
         description: "Contagem de clientes únicos com ao menos 1 pedido no período. Não filtra por status."
 
+      - name: gross_revenue_amount
+        agg: sum
+        expr: "CASE WHEN status IN ('aprovado', 'enviado', 'entregue') THEN total_amount_brl ELSE 0 END"
+        agg_time_dimension: created_date
+        description: >
+          Soma de total_amount_brl para pedidos com status IN ('aprovado', 'enviado', 'entregue').
+          Diferente de delivered_revenue (que filtra só 'entregue'), esta medida inclui pedidos
+          ainda em trânsito. Use apenas como input da métrica gross_revenue — não referencie
+          diretamente em análises, prefira a métrica nomeada.
+
+      - name: returned_order_count
+        agg: sum
+        expr: "CASE WHEN has_return = true THEN 1 ELSE 0 END"
+        agg_time_dimension: created_date
+        description: >
+          Contagem de pedidos com devolução (has_return = true) usando SUM de flag inteira.
+          Alternativa segura a count_distinct com filtro de dimensão booleana — evita
+          a necessidade de declarar has_return como dimensão no semantic model.
+
 
 # =============================================================================
 # MÉTRICAS
@@ -116,8 +135,7 @@ metrics:
       ARMADILHA: gross_revenue >= delivered_revenue sempre. Diferença = pedidos em trânsito.
     type: simple
     type_params:
-      measure: delivered_revenue   # reutilizamos a medida; filtro via where abaixo
-    filter: "{{ Dimension('order__status') }} IN ('aprovado', 'enviado', 'entregue')"
+      measure: gross_revenue_amount
 
   # ── 3. RECEITA LÍQUIDA (descontando devoluções) ─────────────────────────────
   - name: net_revenue
@@ -192,9 +210,9 @@ metrics:
     type_params:
       measure: customer_count
     filter: >
-      {{ Dimension('order__status') }} = 'delivered'
+      {{ Dimension('order__status') }} = 'entregue'
       AND {{ TimeDimension('order__created_date', 'day') }}
-          >= DATEADD(day, -30, CURRENT_DATE())
+          >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
 
   # ── 8. TAXA DE DEVOLUÇÃO ────────────────────────────────────────────────────
   - name: return_rate
@@ -221,8 +239,11 @@ metrics:
   # Medida auxiliar para return_rate (pedidos devolvidos)
   - name: returned_orders
     label: "Pedidos Devolvidos"
-    description: "Contagem de pedidos com has_return = true. Usado como componente de return_rate. A fonte não tem status 'returned'."
+    description: >
+      Contagem de pedidos com devolução (has_return = true). Usado como componente de return_rate.
+      A fonte não tem status 'returned' — devolução é capturada pela flag has_return.
+      Usa a medida returned_order_count (SUM de flag) em vez de filtro por dimensão booleana,
+      pois has_return não está declarado como dimensão no semantic model.
     type: simple
     type_params:
-      measure: order_count
-    filter: "{{ Dimension('order__has_return') }} = true"
+      measure: returned_order_count
