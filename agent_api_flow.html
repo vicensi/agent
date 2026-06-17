@@ -98,6 +98,8 @@
   <div class="tab active" onclick="switchTab('loop')">🔄 Loop Agentico</div>
   <div class="tab" onclick="switchTab('arch')">🏗 Arquitetura</div>
   <div class="tab" onclick="switchTab('endpoints')">🔌 Endpoints</div>
+  <div class="tab" onclick="switchTab('streamlit')">📊 Streamlit UI</div>
+  <div class="tab" onclick="switchTab('tools5')">🛠 5 Tools</div>
 </div>
 
 <!-- ═══════════════════ VIEW 1: LOOP ═══════════════════ -->
@@ -291,10 +293,120 @@
   </div>
 </div>
 
+<!-- ═══════════════════ VIEW 4: STREAMLIT UI ═══════════════════ -->
+<div class="view" id="view-streamlit">
+  <div class="flow">
+
+    <div class="node node-slate" onclick="showDetailSt('input')" id="n-st-input" style="min-width:200px;">
+      💬 Chat Input<br><span style="font-weight:400;font-size:11px;">st.chat_input / botão exemplo</span>
+    </div>
+    <div class="arrow-v">↓</div>
+
+    <div class="node node-blue" onclick="showDetailSt('session')" id="n-st-session" style="min-width:200px;">
+      🗂 session_state<br><span style="font-weight:400;font-size:11px;">messages[] persiste por sessão</span>
+    </div>
+    <div class="arrow-v">↓</div>
+
+    <div class="node node-orange" onclick="showDetailSt('apicall')" id="n-st-apicall" style="min-width:200px;">
+      📡 POST /ask<br><span style="font-weight:400;font-size:11px;">requests.post(localhost:8001, timeout=120s)</span>
+    </div>
+    <div class="arrow-v">↓</div>
+
+    <div class="node node-purple" onclick="showDetailSt('fastapi')" style="min-width:200px;">
+      🤖 FastAPI → Agent Loop<br><span style="font-weight:400;font-size:11px;">Claude + tools + BigQuery</span>
+    </div>
+    <div class="arrow-v">↓</div>
+
+    <div class="node node-green" onclick="showDetailSt('askresponse')" style="min-width:200px;">
+      📦 AskResponse (JSON)<br><span style="font-weight:400;font-size:11px;">answer · charts[] · tool_calls[]</span>
+    </div>
+    <div class="arrow-v">↓</div>
+
+    <!-- render fanout -->
+    <div style="display:flex;width:100%;justify-content:space-around;align-items:flex-start;margin-top:4px;gap:6px;">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <div class="arrow-label">answer</div>
+        <div class="arrow-v">↓</div>
+        <div class="node node-slate" onclick="showDetailSt('markdown')" style="min-width:90px;max-width:110px;font-size:11.5px;">
+          📝 st.markdown<br><span style="font-weight:400;font-size:10px;">resposta formatada</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <div class="arrow-label">charts[]</div>
+        <div class="arrow-v">↓</div>
+        <div class="node node-green" onclick="showDetailSt('plotly')" style="min-width:90px;max-width:110px;font-size:11.5px;">
+          📈 Plotly inline<br><span style="font-weight:400;font-size:10px;">bar/line/pie</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <div class="arrow-label">tool_calls[]</div>
+        <div class="arrow-v">↓</div>
+        <div class="node node-slate" onclick="showDetailSt('expander')" style="min-width:90px;max-width:110px;font-size:11.5px;">
+          📋 st.expander<br><span style="font-weight:400;font-size:10px;">SQL + params</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="detail" id="detail-st-panel">
+    👆 <strong>Clique em qualquer bloco</strong> para ver o que acontece ali.
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#CBD5E1"></div>Streamlit</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#FDE68A"></div>HTTP Call</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#DDD6FE"></div>FastAPI/Agent</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#A7F3D0"></div>Render</div>
+  </div>
+</div>
+
+<!-- ═══════════════════ VIEW 5: 5 TOOLS ═══════════════════ -->
+<div class="view" id="view-tools5">
+  <div style="display:flex;flex-direction:column;gap:8px;">
+
+    <div class="node node-slate" onclick="showDetailT5('list')" style="max-width:100%;text-align:left;padding:12px 16px;">
+      <div style="font-size:10px;opacity:.6;font-weight:600;letter-spacing:.5px;margin-bottom:4px;">TOOL 1</div>
+      <div><code style="background:#EEF2FF;color:#3730A3;padding:1px 5px;border-radius:4px;font-size:12px;">list_metrics</code></div>
+      <div style="font-size:11px;font-weight:400;margin-top:4px;opacity:.8;">Retorna catálogo completo das 8 métricas. Usar antes de query_metric quando não sabe o nome exato ou quer comparar métricas similares.</div>
+    </div>
+
+    <div class="node node-blue" onclick="showDetailT5('query')" style="max-width:100%;text-align:left;padding:12px 16px;">
+      <div style="font-size:10px;opacity:.6;font-weight:600;letter-spacing:.5px;margin-bottom:4px;">TOOL 2 — CAMINHO PREFERENCIAL</div>
+      <div><code style="background:#EEF2FF;color:#3730A3;padding:1px 5px;border-radius:4px;font-size:12px;">query_metric</code></div>
+      <div style="font-size:11px;font-weight:400;margin-top:4px;opacity:.8;">Consulta métrica pré-definida com SQL gerado. 8 métricas: delivered_revenue, gross_revenue, net_revenue, returned_revenue, delivered_orders, avg_order_value, return_rate, active_customers_30d.</div>
+    </div>
+
+    <div class="node node-orange" onclick="showDetailT5('sql')" style="max-width:100%;text-align:left;padding:12px 16px;">
+      <div style="font-size:10px;opacity:.6;font-weight:600;letter-spacing:.5px;margin-bottom:4px;">TOOL 3 — ESCAPE HATCH</div>
+      <div><code style="background:#EEF2FF;color:#3730A3;padding:1px 5px;border-radius:4px;font-size:12px;">run_sql_readonly</code></div>
+      <div style="font-size:11px;font-weight:400;margin-top:4px;opacity:.8;">SQL livre com validação de segurança (sqlglot AST). Usar apenas quando query_metric não cobre — ex: JOIN entre fct_orders e dim_products para análise por categoria.</div>
+    </div>
+
+    <div class="node node-slate" onclick="showDetailT5('lineage')" style="max-width:100%;text-align:left;padding:12px 16px;">
+      <div style="font-size:10px;opacity:.6;font-weight:600;letter-spacing:.5px;margin-bottom:4px;">TOOL 4</div>
+      <div><code style="background:#EEF2FF;color:#3730A3;padding:1px 5px;border-radius:4px;font-size:12px;">get_lineage</code></div>
+      <div style="font-size:11px;font-weight:400;margin-top:4px;opacity:.8;">Retorna origem, transformações e colunas de um modelo dbt. Usar antes de escrever SQL livre para verificar se uma coluna existe e de onde vem.</div>
+    </div>
+
+    <div class="node node-green" onclick="showDetailT5('plot')" style="max-width:100%;text-align:left;padding:12px 16px;border-left:3px solid #059669;">
+      <div style="font-size:10px;opacity:.6;font-weight:600;letter-spacing:.5px;margin-bottom:4px;">TOOL 5 — NOVA (Phase 7)</div>
+      <div><code style="background:#ECFDF5;color:#065F46;padding:1px 5px;border-radius:4px;font-size:12px;">plot_chart</code></div>
+      <div style="font-size:11px;font-weight:400;margin-top:4px;opacity:.8;">Registra spec de gráfico (bar/line/pie) após obter dados. Não executa query — armazena em charts_log. AskResponse.charts[] é lido pelo Streamlit para renderizar Plotly inline.</div>
+    </div>
+
+  </div>
+
+  <div class="detail" id="detail-t5-panel">
+    👆 <strong>Clique em uma tool</strong> para ver parâmetros, quando usar e quando NÃO usar.
+  </div>
+</div>
+
 <script>
 function switchTab(name) {
+  const names = ['loop','arch','endpoints','streamlit','tools5'];
   document.querySelectorAll('.tab').forEach((t,i) => {
-    t.classList.toggle('active', ['loop','arch','endpoints'][i] === name);
+    t.classList.toggle('active', names[i] === name);
   });
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-' + name).classList.add('active');
@@ -438,6 +550,96 @@ const detailsEp = {
        compatível com Metabase API, Grafana JSON Model, e Looker Studio config.<br>
        Já documentado no OpenAPI para que integrações possam apontar para o endpoint.`,
 };
+
+const detailsSt = {
+  input: `<strong>Chat Input</strong> — duas formas de disparar uma pergunta:<br>
+          <code>st.chat_input("...")</code>: campo de texto na base da tela<br>
+          Botões de exemplo no sidebar: clique seta <code>session_state["pending_question"]</code> e chama <code>st.rerun()</code><br>
+          Ambos resultam na mesma variável <code>question</code> que alimenta o POST /ask.`,
+
+  session: `<strong>st.session_state["messages"]</strong> — histórico persistente por sessão do browser.<br>
+            Cada mensagem armazenada: <code>{"role": "user"|"assistant", "content": str, "charts": [], "tool_calls": []}</code><br>
+            Ao recarregar a página ou abrir nova aba, o histórico é perdido (Streamlit não persiste entre sessões).<br>
+            Sem banco de dados — tudo em memória no processo Streamlit.`,
+
+  apicall: `<strong>POST /ask via requests</strong><br>
+            URL: <code>http://localhost:8001/ask</code> (configurável via <code>API_BASE_URL</code>)<br>
+            Timeout: 120s — queries BigQuery podem demorar, Claude API pode ter latência<br>
+            Erros tratados separadamente: <code>ConnectionError</code> (API offline), <code>Timeout</code>, <code>HTTPError</code><br>
+            Exibe <code>st.spinner("Consultando o warehouse...")</code> enquanto aguarda.`,
+
+  fastapi: `<strong>FastAPI → Agent Loop</strong> — o mesmo fluxo da aba "Loop Agentico".<br>
+            O Streamlit não conhece os internos do loop — só vê o JSON final da <code>AskResponse</code>.<br>
+            Latência típica: 3-15s dependendo do número de tool calls e queries BigQuery.`,
+
+  askresponse: `<strong>AskResponse (Phase 7 — atualizado)</strong><br>
+                Campos relevantes para o Streamlit:<br>
+                <code>answer</code>: string markdown — renderizado com <code>st.markdown()</code><br>
+                <code>charts</code>: <code>list[ChartSpec]</code> — cada spec vira um <code>go.Figure</code> Plotly<br>
+                <code>tool_calls</code>: <code>list[ToolCallRecord]</code> — exibidos no <code>st.expander("Fontes")</code><br>
+                <code>total_elapsed_ms</code>: exibido como <code>st.caption("⏱ Xs")</code>`,
+
+  markdown: `<strong>st.markdown(answer)</strong><br>
+             O agente formata a resposta em markdown (negrito, tabelas, listas).<br>
+             Streamlit renderiza markdown nativamente — tabelas ficam com HTML formatado.<br>
+             Renderizado dentro de <code>st.chat_message("assistant")</code> para manter o visual de chat.`,
+
+  plotly: `<strong>Plotly inline via ChartSpec</strong><br>
+           Cada <code>ChartSpec</code> em <code>charts[]</code> passa pela função <code>render_chart(spec)</code>:<br>
+           Cria <code>go.Figure</code> com <code>go.Bar / go.Scatter / go.Pie</code> conforme <code>chart_type</code><br>
+           Suporta múltiplas séries (<code>values = list[list[float]]</code> + <code>series_names</code>)<br>
+           Renderizado com <code>st.plotly_chart(fig, use_container_width=True)</code> — interativo (hover, zoom).`,
+
+  expander: `<strong>st.expander("Fontes")</strong> — colapsável por padrão.<br>
+             Para cada <code>ToolCallRecord</code> exibe:<br>
+             • <code>st.markdown("**Tool:** tool_name")</code><br>
+             • <code>st.json(parameters)</code> — parâmetros da chamada<br>
+             • <code>st.code(sql_executed, language="sql")</code> — SQL enviado ao BigQuery<br>
+             • <code>st.caption("Linhas: N | Xms")</code> — métricas de performance`,
+};
+
+const detailsT5 = {
+  list: `<strong>list_metrics</strong><br>
+         Sem parâmetros. Retorna <code>format_catalog_for_agent()</code> — texto formatado com todas as 8 métricas.<br>
+         <strong>Quando usar:</strong> antes de <code>query_metric</code> quando não sabe o nome exato, ou para comparar métricas similares (ex: delivered_revenue vs net_revenue).<br>
+         <strong>Quando NÃO usar:</strong> se já sabe o nome da métrica — pule direto para <code>query_metric</code>.`,
+
+  query: `<strong>query_metric</strong><br>
+          Parâmetros: <code>metric</code> (obrigatório), <code>dimensions[]</code>, <code>period</code>, <code>filters{}</code>, <code>limit</code><br>
+          Gera SQL via <code>query_builder.build_metric_query()</code> — validado por <code>available_dimensions</code> da métrica.<br>
+          <strong>Quando usar:</strong> sempre que uma das 8 métricas cobrir a pergunta.<br>
+          <strong>Quando NÃO usar:</strong> dimensão <code>category</code> não disponível — fct_orders não tem essa coluna. Para análise por categoria, use <code>run_sql_readonly</code> com JOIN em <code>marts.dim_products</code>.`,
+
+  sql: `<strong>run_sql_readonly</strong><br>
+        Parâmetros: <code>sql</code> (obrigatório), <code>reason</code> (por que query_metric não bastou)<br>
+        Validação: <code>sql_validator.py</code> — parseia AST com sqlglot, bloqueia DDL/DML, exige schema <code>marts.*</code>, injeta LIMIT ≤ 1000.<br>
+        <strong>Quando usar:</strong> JOINs entre tabelas (ex: fct_orders + dim_products para ticket por categoria), agregações não cobertas pelas métricas.<br>
+        <strong>Quando NÃO usar:</strong> quando <code>query_metric</code> já cobre — mais seguro, mais rápido, menos tokens.`,
+
+  lineage: `<strong>get_lineage</strong><br>
+             Parâmetro: <code>model</code> — nome do modelo dbt.<br>
+             Modelos disponíveis: <code>fct_orders, dim_customers, dim_customers_kpis, dim_products, agg_daily_revenue</code><br>
+             Retorna: origem do dado, transformações aplicadas no staging, grão e colunas principais.<br>
+             <strong>Quando usar:</strong> antes de escrever SQL livre para verificar se uma coluna existe e em qual tabela.<br>
+             <strong>Quando NÃO usar:</strong> se já sabe as colunas — evita iteração desnecessária (MAX_ITERATIONS = 12).`,
+
+  plot: `<strong>plot_chart — NOVA (Phase 7)</strong><br>
+          Parâmetros: <code>chart_type</code> (bar/bar_horizontal/line/pie), <code>title</code>, <code>labels[]</code>, <code>values[]</code>, <code>series_names[]</code>, <code>x_label</code>, <code>y_label</code><br>
+          <strong>Não executa query.</strong> Apenas registra spec em <code>executor.charts_log[]</code>.<br>
+          O Streamlit lê <code>AskResponse.charts[]</code> e renderiza <code>go.Figure</code> Plotly inline.<br>
+          <strong>Quando usar:</strong> APÓS ter os dados — nunca antes. Para comparações categóricas (bar), evolução temporal (line), partes de um todo (pie).<br>
+          <strong>Quando NÃO usar:</strong> valor único (KPI simples), >10 categorias em pie, quando o texto já basta.`,
+};
+
+function showDetailSt(key) {
+  const panel = document.getElementById('detail-st-panel');
+  panel.innerHTML = detailsSt[key] || '';
+}
+
+function showDetailT5(key) {
+  const panel = document.getElementById('detail-t5-panel');
+  panel.innerHTML = detailsT5[key] || '';
+}
 
 function showDetail(key) {
   document.querySelectorAll('.node').forEach(n => n.classList.remove('active-node'));

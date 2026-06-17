@@ -150,6 +150,61 @@ TOOL_DEFINITIONS: list[dict] = [
 
     # ── 4. get_lineage ────────────────────────────────────────────────────────
     {
+        "name": "plot_chart",
+        "description": (
+            "Cria uma visualização gráfica dos dados obtidos via query_metric ou run_sql_readonly. "
+            "Use APÓS ter os dados — nunca antes de executar uma query. "
+            "Quando usar: "
+            "(1) múltiplos valores categóricos comparando magnitudes (ex: receita por canal → bar); "
+            "(2) evolução temporal de uma ou mais métricas (ex: receita por mês → line); "
+            "(3) distribuição de partes de um todo (ex: % por segmento → pie). "
+            "NÃO use para: valor único (KPI simples), tabelas com >10 categorias no pie, "
+            "ou quando o texto já é suficiente para responder a pergunta."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "chart_type": {
+                    "type": "string",
+                    "enum": ["bar", "bar_horizontal", "line", "pie"],
+                    "description": "Tipo do gráfico: bar (colunas verticais), bar_horizontal, line (linhas temporais), pie (pizza).",
+                },
+                "title": {
+                    "type": "string",
+                    "description": "Título do gráfico (ex: 'Receita Entregue por Canal — últimos 90 dias').",
+                },
+                "labels": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Categorias ou períodos do eixo X (ex: ['app_ios', 'web_desktop', 'marketplace']).",
+                },
+                "values": {
+                    "type": "array",
+                    "description": (
+                        "Valores numéricos. Para série única: list[float] (ex: [1200.5, 800.0]). "
+                        "Para múltiplas séries: list[list[float]] onde cada sublista é uma série "
+                        "(ex: [[1200, 800], [300, 150]] — use junto com series_names)."
+                    ),
+                },
+                "series_names": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Nomes das séries quando values for list[list[float]] (ex: ['Receita Entregue', 'Devoluções']).",
+                },
+                "x_label": {
+                    "type": "string",
+                    "description": "Rótulo do eixo X (ex: 'Canal', 'Mês'). Omitir se óbvio pelo título.",
+                },
+                "y_label": {
+                    "type": "string",
+                    "description": "Rótulo do eixo Y (ex: 'Receita (BRL)', 'Pedidos'). Omitir se óbvio.",
+                },
+            },
+            "required": ["chart_type", "title", "labels", "values"],
+        },
+    },
+
+    {
         "name": "get_lineage",
         "description": (
             "Retorna a linhagem de dados de um modelo dbt — origem, transformações "
@@ -189,6 +244,7 @@ class ToolExecutor:
 
     def __init__(self):
         self.tool_calls_log: list[dict] = []
+        self.charts_log: list[dict] = []
 
     def execute(self, tool_name: str, tool_input: dict) -> str:
         """
@@ -206,6 +262,8 @@ class ToolExecutor:
                 return self._run_sql_readonly(tool_input)
             elif tool_name == "get_lineage":
                 return self._get_lineage(tool_input)
+            elif tool_name == "plot_chart":
+                return self._plot_chart(tool_input)
             else:
                 return f"Tool '{tool_name}' não reconhecida."
         except Exception as exc:
@@ -326,3 +384,26 @@ class ToolExecutor:
             "elapsed_ms": None,
         })
         return lineage_map.get(model, f"Modelo '{model}' não encontrado.")
+
+    def _plot_chart(self, tool_input: dict) -> str:
+        """
+        Registra uma especificação de gráfico para ser renderizada pelo frontend.
+
+        Não executa nenhuma query — apenas armazena a spec em charts_log.
+        O Streamlit lê charts_log da AskResponse e renderiza via Plotly.
+        """
+        chart_spec = {
+            "chart_type":   tool_input.get("chart_type"),
+            "title":        tool_input.get("title", ""),
+            "labels":       tool_input.get("labels", []),
+            "values":       tool_input.get("values", []),
+            "series_names": tool_input.get("series_names"),
+            "x_label":      tool_input.get("x_label"),
+            "y_label":      tool_input.get("y_label"),
+        }
+        self.charts_log.append(chart_spec)
+        return (
+            f"Gráfico '{chart_spec['title']}' ({chart_spec['chart_type']}) "
+            f"registrado com {len(chart_spec['labels'])} categorias. "
+            "O frontend irá renderizá-lo inline."
+        )

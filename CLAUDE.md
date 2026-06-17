@@ -46,6 +46,12 @@ dbt_project/
 Raiz: `gerar_dataset_ecommerce.py` (gerador do CSV sintético), `prompt.md` (spec),
 `requirements.txt`, `.venv/` (gitignored).
 
+```
+streamlit_app/
+├── app.py               # Chat UI — chama POST /ask, renderiza markdown + Plotly inline
+└── requirements.txt     # streamlit, plotly, requests
+```
+
 ## Comandos
 
 Sempre usar o ambiente virtual:

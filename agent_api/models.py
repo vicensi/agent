@@ -76,6 +76,27 @@ class QueryRequest(BaseModel):
 # RESPONSE MODELS
 # =============================================================================
 
+class ChartSpec(BaseModel):
+    """
+    Especificação de um gráfico gerado pelo agente via tool plot_chart.
+    O frontend (Streamlit) usa essa spec para renderizar Plotly inline.
+    """
+    chart_type: str = Field(
+        description="Tipo do gráfico: bar | bar_horizontal | line | pie.",
+    )
+    title: str = Field(description="Título do gráfico.")
+    labels: list[str] = Field(description="Categorias ou períodos do eixo X.")
+    values: list = Field(
+        description="Valores numéricos: list[float] para série única, list[list[float]] para múltiplas séries.",
+    )
+    series_names: list[str] | None = Field(
+        default=None,
+        description="Nomes das séries (quando values for list[list[float]]).",
+    )
+    x_label: str | None = Field(default=None, description="Rótulo do eixo X.")
+    y_label: str | None = Field(default=None, description="Rótulo do eixo Y.")
+
+
 class ToolCallRecord(BaseModel):
     """
     Registro de uma tool call executada durante o processamento da pergunta.
@@ -108,6 +129,10 @@ class AskResponse(BaseModel):
     answer: str = Field(description="Resposta formatada em markdown com citação de fonte.")
     tool_calls: list[ToolCallRecord] = Field(
         description="Trilha de auditoria: todas as tools chamadas e seus parâmetros.",
+    )
+    charts: list[ChartSpec] = Field(
+        default_factory=list,
+        description="Gráficos gerados pelo agente via plot_chart, para renderização inline no frontend.",
     )
     question: str = Field(description="Pergunta original recebida.")
     session_id: str | None = Field(default=None)

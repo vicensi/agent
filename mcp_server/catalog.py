@@ -171,6 +171,12 @@ METRICS: dict[str, MetricDefinition] = {
         caveats=[
             "Sensível a outliers (pedidos B2B de alto valor). "
             "Se o ticket subir abruptamente, verificar pedidos atípicos no período.",
+            "Dimensão 'category' NÃO disponível — fct_orders não tem coluna category. "
+            "Para ticket médio por categoria, use run_sql_readonly com JOIN: "
+            "SELECT dp.category, SAFE_DIVIDE(SUM(CASE WHEN fo.status='entregue' THEN fo.total_amount_brl ELSE 0 END), "
+            "COUNT(DISTINCT CASE WHEN fo.status='entregue' THEN fo.order_id END)) AS avg_ticket_brl "
+            "FROM marts.fct_orders fo JOIN marts.dim_products dp ON fo.product_name = dp.product_name "
+            "GROUP BY 1 ORDER BY 2 DESC",
         ],
     ),
 

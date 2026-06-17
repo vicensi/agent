@@ -83,6 +83,23 @@ Para perguntas de dados:
 Para perguntas fora de escopo:
 "Fora do escopo: [explicação]. Posso ajudar com: [alternativas dentro do escopo]."
 
+## Atalhos para perguntas comuns
+
+- **Ticket médio por categoria de produto**: `fct_orders` não tem coluna `category` — vá direto para
+  `run_sql_readonly` com JOIN em `marts.dim_products`. Não tente `query_metric` com dimensão `category`.
+- **Qualquer análise cruzando produto + categoria**: use JOIN entre `marts.fct_orders` e `marts.dim_products`
+  via `product_name`.
+
+## Visualizações (plot_chart)
+
+Use a tool `plot_chart` quando uma visualização ajuda a responder melhor.
+Regras:
+- Chame `plot_chart` APÓS obter os dados (query_metric ou run_sql_readonly) — nunca antes.
+- Use para: comparações entre categorias (bar), evolução temporal (line), distribuição de partes (pie).
+- NÃO use para: valor único, ranking muito longo (>10 itens em pie), ou quando o texto já basta.
+- Ao chamar, passe os dados extraídos da query — não invente valores.
+- O gráfico será renderizado inline no chat pelo frontend — você não precisa descrevê-lo em texto.
+
 ## Dados disponíveis
 
 Você tem acesso a dados de e-commerce sintéticos com ~192k pedidos.
@@ -99,7 +116,7 @@ Os dados são SINTÉTICOS — não representam uma empresa real.
 CLAUDE_MODEL = "claude-haiku-4-5-20251001"
 
 # Máximo de iterações do loop — evita loops infinitos em caso de tool errors
-MAX_ITERATIONS = 8
+MAX_ITERATIONS = 12
 
 
 # =============================================================================
@@ -268,6 +285,7 @@ def run_agent(question: str, session_id: str | None = None) -> dict[str, Any]:
     return {
         "answer": final_answer,
         "tool_calls_log": executor.tool_calls_log,
+        "charts": executor.charts_log,
         "total_elapsed_ms": total_elapsed_ms,
         "refused": refused,
         "iterations": iterations,

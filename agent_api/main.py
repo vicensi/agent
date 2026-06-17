@@ -61,6 +61,7 @@ from agent import run_agent
 from models import (
     AskRequest,
     AskResponse,
+    ChartSpec,
     MetricInfo,
     MetricsResponse,
     QueryRequest,
@@ -335,9 +336,15 @@ async def ask(req: AskRequest, request: Request):
         for tc in result["tool_calls_log"]
     ]
 
+    charts = [
+        ChartSpec(**c)
+        for c in result.get("charts", [])
+    ]
+
     return AskResponse(
         answer=result["answer"],
         tool_calls=tool_calls,
+        charts=charts,
         question=req.question,
         session_id=session_id,
         total_elapsed_ms=result["total_elapsed_ms"],
