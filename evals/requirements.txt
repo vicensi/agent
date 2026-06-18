@@ -1,0 +1,4 @@
+# Evals — Fase 5
+httpx>=0.27.0        # cliente HTTP sync para chamar a API
+anthropic>=0.28.0    # LLM-as-judge
+python-dotenv>=1.0.0

@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: transparent; padding: 16px; }
+
+  h2.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+  .tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+  .tab {
+    padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px;
+    background: var(--bg-200, #f0f0f0); color: var(--text-300, #666);
+    border: 1.5px solid transparent; transition: all .15s;
+  }
+  .tab.active {
+    background: var(--bg-000, #fff); color: var(--text-100, #111);
+    border-color: var(--border-200, #ddd); font-weight: 600;
+  }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* --- shared node styles --- */
+  .flow { display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .row { display: flex; align-items: center; gap: 0; justify-content: center; width: 100%; }
+
+  .node {
+    border-radius: 8px; padding: 10px 14px; font-size: 12.5px;
+    font-weight: 600; text-align: center; cursor: pointer;
+    transition: box-shadow .15s, transform .1s;
+    min-width: 110px; max-width: 160px; line-height: 1.3;
+    position: relative; user-select: none;
+  }
+  .node:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.12); }
+  .node.active-node { outline: 2.5px solid var(--accent, #6C47FF); outline-offset: 2px; }
+
+  .node-blue   { background: #EEF2FF; color: #3730A3; border: 1.5px solid #C7D2FE; }
+  .node-green  { background: #ECFDF5; color: #065F46; border: 1.5px solid #A7F3D0; }
+  .node-orange { background: #FFF7ED; color: #92400E; border: 1.5px solid #FDE68A; }
+  .node-purple { background: #F5F3FF; color: #4C1D95; border: 1.5px solid #DDD6FE; }
+  .node-slate  { background: #F8FAFC; color: #334155; border: 1.5px solid #CBD5E1; }
+  .node-red    { background: #FEF2F2; color: #991B1B; border: 1.5px solid #FECACA; }
+  .node-diamond { border-radius: 4px; transform: rotate(45deg); width: 80px; height: 80px; padding: 0; display: flex; align-items: center; justify-content: center; }
+  .node-diamond span { transform: rotate(-45deg); font-size: 11px; font-weight: 700; text-align: center; line-height: 1.2; display: block; padding: 4px; }
+
+  .arrow { color: var(--text-300, #999); font-size: 18px; line-height: 1; flex-shrink: 0; }
+  .arrow-v { font-size: 18px; color: var(--text-300, #999); margin: 2px 0; }
+  .arrow-label { font-size: 10px; color: var(--text-300, #777); font-weight: 500; }
+
+  .loop-box {
+    border: 2px dashed #C7D2FE; border-radius: 12px;
+    padding: 14px 20px; position: relative; margin: 8px 0;
+    background: #FAFAFE;
+  }
+  .loop-label {
+    position: absolute; top: -10px; left: 14px;
+    background: #EEF2FF; color: #4338CA; font-size: 10px;
+    font-weight: 700; padding: 2px 8px; border-radius: 4px;
+    letter-spacing: .5px; text-transform: uppercase;
+  }
+
+  /* detail panel */
+  .detail {
+    margin-top: 14px; border-radius: 8px;
+    background: var(--bg-100, #f8f8f8); border: 1.5px solid var(--border-200, #e4e4e4);
+    padding: 12px 16px; font-size: 12.5px; min-height: 60px;
+    color: var(--text-100, #222); transition: all .2s; line-height: 1.6;
+  }
+  .detail strong { color: var(--accent, #5B21B6); }
+  .detail code { background: #EEF2FF; color: #3730A3; padding: 1px 5px; border-radius: 4px; font-size: 11.5px; }
+
+  /* legend */
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11px; color: var(--text-300, #777); margin-top: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 4px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+
+  /* architecture view */
+  .arch-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 8px 0; }
+  .arch-node {
+    border-radius: 8px; padding: 10px 14px; font-size: 12px;
+    font-weight: 600; text-align: center; cursor: pointer;
+    min-width: 100px; transition: box-shadow .15s, transform .1s;
+  }
+  .arch-node:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,.1); }
+
+  .v-connector { width: 2px; height: 20px; background: var(--border-200, #CBD5E1); margin: 0 auto; }
+  .h-line { height: 2px; flex: 1; background: var(--border-200, #CBD5E1); }
+  .h-line-group { display: flex; align-items: center; gap: 0; width: 100%; max-width: 560px; margin: 0 auto; }
+
+  .sub-label { font-size: 10px; color: var(--text-300, #888); font-weight: 400; margin-top: 2px; }
+</style>
+</head>
+<body>
+<h2 class="sr-only">Fluxograma interativo da Agentic Data Platform — clique nos nós para ver detalhes</h2>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('loop')">🔄 Loop Agentico</div>
+  <div class="tab" onclick="switchTab('arch')">🏗 Arquitetura</div>
+  <div class="tab" onclick="switchTab('endpoints')">🔌 Endpoints</div>
+  <div class="tab" onclick="switchTab('streamlit')">📊 Streamlit UI</div>
+  <div class="tab" onclick="switchTab('tools5')">🛠 5 Tools</div>
+</div>
+
+<!-- ═══════════════════ VIEW 1: LOOP ═══════════════════ -->
+<div class="view active" id="view-loop">
+  <div class="flow">
+
+    <div class="node node-blue" onclick="showDetail('req')" id="n-req">
+      📥 POST /ask<br><span style="font-weight:400;font-size:11px;">question: string</span>
+    </div>
+    <div class="arrow-v">↓</div>
+
+    <div class="node node-slate" onclick="showDetail('sysprompt')" id="n-sysprompt">
+      📋 System Prompt<br><span style="font-weight:400;font-size:11px;">contrato do agente</span>
+    </div>
+    <div class="arrow-v">↓</div>
+
+    <div class="loop-box">
+      <div class="loop-label">loop (max 8x)</div>
+      <div class="flow">
+
+        <div class="node node-purple" onclick="showDetail('claude')" id="n-claude" style="min-width:180px;">
+          🤖 Claude API<br><span style="font-weight:400;font-size:11px;">claude-3-5-haiku</span>
+        </div>
+        <div class="arrow-v">↓</div>
+
+        <!-- diamond decision -->
+        <div style="margin: 8px 0; position: relative; width: 160px; height: 70px;">
+          <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(45deg);
+            width:80px;height:40px;background:#FFF7ED;border:1.5px solid #FDE68A;border-radius:4px;"></div>
+          <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+            font-size:11px;font-weight:700;color:#92400E;text-align:center;line-height:1.3;cursor:pointer;"
+            onclick="showDetail('decision')">
+            stop_reason?
+          </div>
+        </div>
+
+        <!-- branches -->
+        <div style="display:flex;width:100%;justify-content:space-around;align-items:flex-start;margin-top:4px;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div class="arrow-label">tool_use</div>
+            <div class="arrow-v">↓</div>
+            <div class="node node-orange" onclick="showDetail('executor')" id="n-executor" style="min-width:130px;">
+              ⚙️ ToolExecutor<br><span style="font-weight:400;font-size:11px;">tools.py</span>
+            </div>
+            <div class="arrow-v">↓</div>
+            <div class="node node-green" onclick="showDetail('bq')" id="n-bq" style="min-width:130px;">
+              🗄 BigQuery<br><span style="font-weight:400;font-size:11px;">marts.*</span>
+            </div>
+            <div class="arrow-v">↓</div>
+            <div style="font-size:11px;color:#6366F1;font-weight:600;">
+              tool_result ↑<br><span style="font-weight:400;color:#888;">volta pro Claude</span>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:28px;">
+            <div class="arrow-label">end_turn</div>
+            <div class="arrow-v">↓</div>
+            <div class="node node-green" onclick="showDetail('resp')" id="n-resp" style="min-width:100px;">
+              ✅ Resposta<br><span style="font-weight:400;font-size:11px;">text block</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="arrow-v">↓</div>
+    <div class="node node-blue" onclick="showDetail('askresponse')" id="n-askresponse">
+      📤 AskResponse<br><span style="font-weight:400;font-size:11px;">answer + tool_calls</span>
+    </div>
+
+  </div>
+
+  <div class="detail" id="detail-panel">
+    👆 <strong>Clique em qualquer bloco</strong> para ver o que acontece ali.
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#C7D2FE"></div>Entrada/Saída</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#DDD6FE"></div>Claude API</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#FDE68A"></div>Execução</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#A7F3D0"></div>BigQuery</div>
+  </div>
+</div>
+
+<!-- ═══════════════════ VIEW 2: ARQUITETURA ═══════════════════ -->
+<div class="view" id="view-arch">
+  <div class="flow">
+
+    <div class="arch-row">
+      <div class="arch-node node-slate" onclick="showDetailArch('bi')">
+        Power BI<br><div class="sub-label">POST /query</div>
+      </div>
+      <div class="arch-node node-slate" onclick="showDetailArch('bi')">
+        Metabase<br><div class="sub-label">GET /metrics</div>
+      </div>
+      <div class="arch-node node-slate" onclick="showDetailArch('bi')">
+        curl / SDK<br><div class="sub-label">POST /ask</div>
+      </div>
+    </div>
+
+    <div class="v-connector"></div>
+
+    <div class="arch-node node-blue" onclick="showDetailArch('fastapi')" style="min-width:200px;">
+      🌐 FastAPI (port 8001)<br><div class="sub-label">main.py — ASGI + async</div>
+    </div>
+
+    <div class="v-connector"></div>
+
+    <div class="arch-row">
+      <div class="arch-node node-purple" onclick="showDetailArch('agent')" style="min-width:120px;">
+        🤖 agent.py<br><div class="sub-label">agentic loop</div>
+      </div>
+      <div style="display:flex;align-items:center;color:#ccc;font-size:20px;padding:0 8px;">|</div>
+      <div class="arch-node node-slate" onclick="showDetailArch('direct')" style="min-width:120px;">
+        ⚡ Direto BQ<br><div class="sub-label">/query sem LLM</div>
+      </div>
+    </div>
+
+    <div class="v-connector"></div>
+
+    <div class="arch-node node-orange" onclick="showDetailArch('tools')" style="min-width:200px;">
+      ⚙️ tools.py — ToolExecutor<br><div class="sub-label">4 tools disponíveis</div>
+    </div>
+
+    <div class="v-connector"></div>
+
+    <div class="arch-row">
+      <div class="arch-node node-slate" onclick="showDetailArch('catalog')" style="min-width:100px;">
+        📋 catalog.py<br><div class="sub-label">8 métricas</div>
+      </div>
+      <div class="arch-node node-slate" onclick="showDetailArch('validator')" style="min-width:100px;">
+        🔒 sql_validator<br><div class="sub-label">sqlglot</div>
+      </div>
+      <div class="arch-node node-slate" onclick="showDetailArch('qbuilder')" style="min-width:100px;">
+        🔧 query_builder<br><div class="sub-label">SQL gerado</div>
+      </div>
+    </div>
+
+    <div class="v-connector"></div>
+
+    <div class="arch-node node-green" onclick="showDetailArch('bq2')" style="min-width:200px;">
+      🗄 BigQuery — dataset marts<br><div class="sub-label">fct_orders · dim_customers · agg_daily_revenue</div>
+    </div>
+
+  </div>
+
+  <div class="detail" id="detail-arch-panel">
+    👆 <strong>Clique em qualquer bloco</strong> para ver o papel desse componente.
+  </div>
+</div>
+
+<!-- ═══════════════════ VIEW 3: ENDPOINTS ═══════════════════ -->
+<div class="view" id="view-endpoints">
+  <div style="display:flex;flex-direction:column;gap:8px;">
+
+    <div class="node node-purple" onclick="showDetailEp('ask')" style="max-width:100%;text-align:left;padding:12px 16px;">
+      <div style="font-size:12px;opacity:.7;font-weight:500;margin-bottom:4px;">POST</div>
+      <div>/ask — Pergunta em linguagem natural</div>
+      <div style="font-size:11px;font-weight:400;margin-top:4px;opacity:.8;">Passa pelo agente → múltiplas tools → resposta com citação</div>
+    </div>
+
+    <div class="node node-blue" onclick="showDetailEp('query')" style="max-width:100%;text-align:left;padding:12px 16px;">
+      <div style="font-size:12px;opacity:.7;font-weight:500;margin-bottom:4px;">POST</div>
+      <div>/query — Métrica estruturada</div>
+      <div style="font-size:11px;font-weight:400;margin-top:4px;opacity:.8;">Direto ao BigQuery, sem LLM. Ideal para BI tools automatizadas</div>
+    </div>
+
+    <div class="node node-green" onclick="showDetailEp('metrics')" style="max-width:100%;text-align:left;padding:12px 16px;">
+      <div style="font-size:12px;opacity:.7;font-weight:500;margin-bottom:4px;">GET</div>
+      <div>/metrics — Catálogo de métricas</div>
+      <div style="font-size:11px;font-weight:400;margin-top:4px;opacity:.8;">Lista as 8 métricas com dimensões, unit e caveats</div>
+    </div>
+
+    <div class="node node-slate" onclick="showDetailEp('health')" style="max-width:100%;text-align:left;padding:12px 16px;">
+      <div style="font-size:12px;opacity:.7;font-weight:500;margin-bottom:4px;">GET</div>
+      <div>/health — Liveness probe</div>
+      <div style="font-size:11px;font-weight:400;margin-top:4px;opacity:.8;">Valida BigQuery + Anthropic key. Usado por load balancers</div>
+    </div>
+
+    <div class="node node-red" onclick="showDetailEp('dashboard')" style="max-width:100%;text-align:left;padding:12px 16px;">
+      <div style="font-size:12px;opacity:.7;font-weight:500;margin-bottom:4px;">POST — 501 (WIP)</div>
+      <div>/dashboard — Spec de dashboard</div>
+      <div style="font-size:11px;font-weight:400;margin-top:4px;opacity:.8;">Fase 5 — gera JSON de dashboard para Metabase/Grafana</div>
+    </div>
+
+  </div>
+
+  <div class="detail" id="detail-ep-panel">
+    👆 <strong>Clique em um endpoint</strong> para ver o payload e o fluxo de dados.
+  </div>
+</div>
+
+<!-- ═══════════════════ VIEW 4: STREAMLIT UI ═══════════════════ -->
+<div class="view" id="view-streamlit">
+  <div class="flow">
+
+    <div class="node node-slate" onclick="showDetailSt('input')" id="n-st-input" style="min-width:200px;">
+      💬 Chat Input<br><span style="font-weight:400;font-size:11px;">st.chat_input / botão exemplo</span>
+    </div>
+    <div class="arrow-v">↓</div>
+
+    <div class="node node-blue" onclick="showDetailSt('session')" id="n-st-session" style="min-width:200px;">
+      🗂 session_state<br><span style="font-weight:400;font-size:11px;">messages[] persiste por sessão</span>
+    </div>
+    <div class="arrow-v">↓</div>
+
+    <div class="node node-orange" onclick="showDetailSt('apicall')" id="n-st-apicall" style="min-width:200px;">
+      📡 POST /ask<br><span style="font-weight:400;font-size:11px;">requests.post(localhost:8001, timeout=120s)</span>
+    </div>
+    <div class="arrow-v">↓</div>
+
+    <div class="node node-purple" onclick="showDetailSt('fastapi')" style="min-width:200px;">
+      🤖 FastAPI → Agent Loop<br><span style="font-weight:400;font-size:11px;">Claude + tools + BigQuery</span>
+    </div>
+    <div class="arrow-v">↓</div>
+
+    <div class="node node-green" onclick="showDetailSt('askresponse')" style="min-width:200px;">
+      📦 AskResponse (JSON)<br><span style="font-weight:400;font-size:11px;">answer · charts[] · tool_calls[]</span>
+    </div>
+    <div class="arrow-v">↓</div>
+
+    <!-- render fanout -->
+    <div style="display:flex;width:100%;justify-content:space-around;align-items:flex-start;margin-top:4px;gap:6px;">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <div class="arrow-label">answer</div>
+        <div class="arrow-v">↓</div>
+        <div class="node node-slate" onclick="showDetailSt('markdown')" style="min-width:90px;max-width:110px;font-size:11.5px;">
+          📝 st.markdown<br><span style="font-weight:400;font-size:10px;">resposta formatada</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <div class="arrow-label">charts[]</div>
+        <div class="arrow-v">↓</div>
+        <div class="node node-green" onclick="showDetailSt('plotly')" style="min-width:90px;max-width:110px;font-size:11.5px;">
+          📈 Plotly inline<br><span style="font-weight:400;font-size:10px;">bar/line/pie</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <div class="arrow-label">tool_calls[]</div>
+        <div class="arrow-v">↓</div>
+        <div class="node node-slate" onclick="showDetailSt('expander')" style="min-width:90px;max-width:110px;font-size:11.5px;">
+          📋 st.expander<br><span style="font-weight:400;font-size:10px;">SQL + params</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="detail" id="detail-st-panel">
+    👆 <strong>Clique em qualquer bloco</strong> para ver o que acontece ali.
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#CBD5E1"></div>Streamlit</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#FDE68A"></div>HTTP Call</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#DDD6FE"></div>FastAPI/Agent</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#A7F3D0"></div>Render</div>
+  </div>
+</div>
+
+<!-- ═══════════════════ VIEW 5: 5 TOOLS ═══════════════════ -->
+<div class="view" id="view-tools5">
+  <div style="display:flex;flex-direction:column;gap:8px;">
+
+    <div class="node node-slate" onclick="showDetailT5('list')" style="max-width:100%;text-align:left;padding:12px 16px;">
+      <div style="font-size:10px;opacity:.6;font-weight:600;letter-spacing:.5px;margin-bottom:4px;">TOOL 1</div>
+      <div><code style="background:#EEF2FF;color:#3730A3;padding:1px 5px;border-radius:4px;font-size:12px;">list_metrics</code></div>
+      <div style="font-size:11px;font-weight:400;margin-top:4px;opacity:.8;">Retorna catálogo completo das 8 métricas. Usar antes de query_metric quando não sabe o nome exato ou quer comparar métricas similares.</div>
+    </div>
+
+    <div class="node node-blue" onclick="showDetailT5('query')" style="max-width:100%;text-align:left;padding:12px 16px;">
+      <div style="font-size:10px;opacity:.6;font-weight:600;letter-spacing:.5px;margin-bottom:4px;">TOOL 2 — CAMINHO PREFERENCIAL</div>
+      <div><code style="background:#EEF2FF;color:#3730A3;padding:1px 5px;border-radius:4px;font-size:12px;">query_metric</code></div>
+      <div style="font-size:11px;font-weight:400;margin-top:4px;opacity:.8;">Consulta métrica pré-definida com SQL gerado. 8 métricas: delivered_revenue, gross_revenue, net_revenue, returned_revenue, delivered_orders, avg_order_value, return_rate, active_customers_30d.</div>
+    </div>
+
+    <div class="node node-orange" onclick="showDetailT5('sql')" style="max-width:100%;text-align:left;padding:12px 16px;">
+      <div style="font-size:10px;opacity:.6;font-weight:600;letter-spacing:.5px;margin-bottom:4px;">TOOL 3 — ESCAPE HATCH</div>
+      <div><code style="background:#EEF2FF;color:#3730A3;padding:1px 5px;border-radius:4px;font-size:12px;">run_sql_readonly</code></div>
+      <div style="font-size:11px;font-weight:400;margin-top:4px;opacity:.8;">SQL livre com validação de segurança (sqlglot AST). Usar apenas quando query_metric não cobre — ex: JOIN entre fct_orders e dim_products para análise por categoria.</div>
+    </div>
+
+    <div class="node node-slate" onclick="showDetailT5('lineage')" style="max-width:100%;text-align:left;padding:12px 16px;">
+      <div style="font-size:10px;opacity:.6;font-weight:600;letter-spacing:.5px;margin-bottom:4px;">TOOL 4</div>
+      <div><code style="background:#EEF2FF;color:#3730A3;padding:1px 5px;border-radius:4px;font-size:12px;">get_lineage</code></div>
+      <div style="font-size:11px;font-weight:400;margin-top:4px;opacity:.8;">Retorna origem, transformações e colunas de um modelo dbt. Usar antes de escrever SQL livre para verificar se uma coluna existe e de onde vem.</div>
+    </div>
+
+    <div class="node node-green" onclick="showDetailT5('plot')" style="max-width:100%;text-align:left;padding:12px 16px;border-left:3px solid #059669;">
+      <div style="font-size:10px;opacity:.6;font-weight:600;letter-spacing:.5px;margin-bottom:4px;">TOOL 5 — NOVA (Phase 7)</div>
+      <div><code style="background:#ECFDF5;color:#065F46;padding:1px 5px;border-radius:4px;font-size:12px;">plot_chart</code></div>
+      <div style="font-size:11px;font-weight:400;margin-top:4px;opacity:.8;">Registra spec de gráfico (bar/line/pie) após obter dados. Não executa query — armazena em charts_log. AskResponse.charts[] é lido pelo Streamlit para renderizar Plotly inline.</div>
+    </div>
+
+  </div>
+
+  <div class="detail" id="detail-t5-panel">
+    👆 <strong>Clique em uma tool</strong> para ver parâmetros, quando usar e quando NÃO usar.
+  </div>
+</div>
+
+<script>
+function switchTab(name) {
+  const names = ['loop','arch','endpoints','streamlit','tools5'];
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+}
+
+const details = {
+  req: `<strong>POST /ask</strong> recebe: <code>{"question": "...", "session_id": "opcional"}</code><br>
+        Validado por Pydantic (<code>min_length=3, max_length=1000</code>) antes de qualquer processamento.<br>
+        Gera <code>session_id</code> automático (UUID) se não informado — rastreia o request nos logs.`,
+
+  sysprompt: `<strong>System Prompt = contrato do agente.</strong> Define 3 regras invioláveis:<br>
+        1. Nunca inventar dados — só responde com o que as tools retornaram<br>
+        2. Citar fonte obrigatória (tool usada + SQL + linhas retornadas)<br>
+        3. Recusar educadamente perguntas fora do escopo de e-commerce<br>
+        Também especifica o <strong>formato exato</strong> da resposta (seções obrigatórias).`,
+
+  claude: `<strong>Claude API — claude-3-5-haiku-20241022</strong><br>
+        Parâmetros da chamada:<br>
+        <code>tools=TOOL_DEFINITIONS</code> → Claude conhece as 4 tools disponíveis<br>
+        <code>tool_choice={"type": "auto"}</code> → Claude decide se/quando chamar tools<br>
+        <code>max_tokens=4096</code> → limite da resposta final<br>
+        Claude lê as <code>description</code> das tools para decidir qual usar. Por isso as descriptions são longas e específicas.`,
+
+  decision: `<strong>Decisão baseada em stop_reason</strong> — o que o Claude retorna:<br>
+        <code>tool_use</code> → Claude quer dados. Executor roda as tools, resultado volta como <code>tool_result</code><br>
+        <code>end_turn</code> sem tools → resposta final pronta, sai do loop<br>
+        <code>max_tokens</code> → limite atingido, resposta truncada com aviso<br>
+        O loop itera até end_turn ou atingir <code>MAX_ITERATIONS = 8</code>.`,
+
+  executor: `<strong>ToolExecutor</strong> em <code>tools.py</code> — mapeia nome da tool para função Python:<br>
+        <code>list_metrics</code> → <code>catalog.format_catalog_for_agent()</code><br>
+        <code>query_metric</code> → <code>query_builder.build_metric_query()</code> + BigQuery<br>
+        <code>run_sql_readonly</code> → <code>sql_validator.validate_sql()</code> + BigQuery<br>
+        <code>get_lineage</code> → dict estático de linhagem por modelo<br>
+        Registra cada chamada no <code>tool_calls_log</code> para auditoria.`,
+
+  bq: `<strong>BigQuery — dataset marts</strong><br>
+        Autenticação via service account (<code>GCP_KEYFILE_PATH</code>) com IAM role <code>agent_readonly</code>.<br>
+        Defense in depth: <strong>sql_validator</strong> (bloqueia DDL/DML) + <strong>IAM</strong> (read-only no GCP).<br>
+        Tabelas disponíveis: <code>fct_orders, dim_customers, dim_customers_kpis, dim_products, agg_daily_revenue</code><br>
+        Timeout: 30s. Máximo de linhas: 500.`,
+
+  resp: `<strong>Resposta final</strong> — último bloco <code>text</code> do Claude após processar todos os tool_results.<br>
+        Formato obrigatório (definido no system prompt):<br>
+        • Resposta direta em 1-2 frases<br>
+        • Tabela/lista com os dados<br>
+        • Seção <strong>Fonte</strong>: tool usada, métrica/SQL, período, row_count<br>
+        • Seção <strong>Caveats</strong> se houver ressalvas`,
+
+  askresponse: `<strong>AskResponse</strong> — JSON retornado ao cliente:<br>
+        <code>answer</code>: string markdown com a resposta formatada<br>
+        <code>tool_calls</code>: lista de <code>ToolCallRecord</code> (trilha de auditoria estruturada)<br>
+        <code>total_elapsed_ms</code>: tempo total incluindo loop + BigQuery<br>
+        <code>refused</code>: boolean — true se a pergunta estava fora do escopo<br>
+        <code>session_id</code>: para rastreamento em logs`,
+};
+
+const detailsArch = {
+  bi: `<strong>BI Tools — clientes da API</strong><br>
+       <code>Power BI</code>: conector Web ou script Python/R → chama <code>POST /query</code> para métricas fixas<br>
+       <code>Metabase</code>: plugin JSON datasource → usa <code>GET /metrics</code> + <code>POST /query</code><br>
+       <code>curl/SDK</code>: <code>POST /ask</code> para análise ad-hoc em linguagem natural<br>
+       A separação /ask vs /query permite usar o agente só quando necessário — mais barato e rápido.`,
+
+  fastapi: `<strong>FastAPI (main.py)</strong> — ASGI async<br>
+       <code>asyncio.to_thread()</code>: SDKs síncronos (Anthropic, BigQuery) rodam em thread pool sem bloquear o event loop<br>
+       <code>Pydantic</code>: valida requests antes de chegar no código do agente<br>
+       <code>/docs</code>: Swagger UI gerado automaticamente<br>
+       <code>CORSMiddleware</code>: permite calls cross-origin de BI tools<br>
+       Porta 8001 (evita conflito com dbt docs em 8080)`,
+
+  agent: `<strong>agent.py</strong> — loop agentico puro<br>
+       Mantém o histórico de mensagens completo entre iterações<br>
+       Claude lê todo o contexto acumulado a cada chamada (expensive, mas necessário)<br>
+       <code>MAX_ITERATIONS=8</code> evita loops infinitos em tool errors<br>
+       Detecta recusa: resposta que começa com "Fora do escopo"`,
+
+  direct: `<strong>Rota direta /query — sem LLM</strong><br>
+       Para perguntas onde já se sabe exatamente qual métrica quer.<br>
+       Fluxo: <code>QueryRequest</code> → <code>build_metric_query()</code> → BigQuery → <code>QueryResponse</code><br>
+       Mais rápido (sem round-trips ao Claude), mais barato (zero tokens), mais previsível.<br>
+       Ideal para dashboards que atualizam a cada hora.`,
+
+  tools: `<strong>tools.py — ToolExecutor</strong><br>
+       Importa mcp_server diretamente (sem subprocess, sem MCP protocol)<br>
+       Isso elimina duplicação — catalog, sql_validator, query_builder ficam em um lugar só<br>
+       Em produção: agent_api chamaria o MCP server via HTTP/SSE como serviço independente<br>
+       Para estudo: import direto é equivalente conceitualmente.`,
+
+  catalog: `<strong>catalog.py</strong> — 8 métricas pré-definidas<br>
+       Cada <code>MetricDefinition</code> tem: sql_expr, source_table, available_dimensions, caveats<br>
+       A <code>description</code> é lida pelo agente para decidir qual métrica usar — quanto mais específica, melhor.<br>
+       Em produção: gerado a partir do <code>dbt manifest.json</code> automaticamente.`,
+
+  validator: `<strong>sql_validator.py</strong> — segurança via sqlglot<br>
+       Permite apenas: <code>SELECT, CTE (WITH), UNION, INTERSECT, EXCEPT</code><br>
+       Bloqueia: <code>INSERT, UPDATE, DELETE, DROP, CREATE, ALTER, TRUNCATE</code><br>
+       Verifica schema: apenas tabelas de <code>marts.*</code> são permitidas<br>
+       Injeta/reduz LIMIT automaticamente (máx 1000)<br>
+       Parse real de AST — não regex.`,
+
+  qbuilder: `<strong>query_builder.py</strong> — gera SQL parametrizado<br>
+       Resolve período: <code>last_7d/30d/90d</code>, <code>YYYY-MM</code>, <code>YYYY-QN</code>, <code>YYYY</code>, ou sem filtro<br>
+       Valida dimensões contra <code>available_dimensions</code> da métrica<br>
+       Gera SQL completo com: SELECT, FROM (referência completa BigQuery), WHERE, GROUP BY, ORDER BY, LIMIT`,
+
+  bq2: `<strong>BigQuery — dataset marts</strong><br>
+       Único dataset acessível pelo agent (IAM role <code>agent_readonly</code>)<br>
+       Tabelas: <code>fct_orders</code> (grão: pedido), <code>dim_customers</code>, <code>dim_customers_kpis</code> (RFM),<br>
+       <code>dim_products</code>, <code>agg_daily_revenue</code> (agregado por dia+canal)<br>
+       ~192k linhas sintéticas com armadilhas tratadas no staging.`,
+};
+
+const detailsEp = {
+  ask: `<strong>POST /ask</strong><br>
+       Request: <code>{"question": "Qual receita por canal?", "session_id": "opt"}</code><br>
+       Processamento: FastAPI → <code>asyncio.to_thread(run_agent)</code> → loop agentico → BigQuery<br>
+       Response: <code>{"answer": "...", "tool_calls": [...], "total_elapsed_ms": 3200, "refused": false}</code><br>
+       Latência típica: 3-8s (inclui 1-3 chamadas à Claude API + queries BigQuery)`,
+
+  query: `<strong>POST /query</strong><br>
+       Request: <code>{"metric": "delivered_revenue", "dimensions": ["channel"], "period": "last_90d"}</code><br>
+       Processamento: FastAPI → <code>build_metric_query()</code> → BigQuery direto (sem LLM)<br>
+       Response: <code>{"rows": [...], "sql_executed": "SELECT ...", "elapsed_ms": 800}</code><br>
+       Latência típica: &lt;1s (apenas BigQuery, zero tokens Anthropic)`,
+
+  metrics: `<strong>GET /metrics</strong><br>
+       Sem parâmetros. Retorna catálogo completo:<br>
+       <code>{"metrics": [{"name": "delivered_revenue", "label": "...", "unit": "BRL", "available_dimensions": [...]}], "total": 8}</code><br>
+       Usado por UIs de seleção de métrica — Power BI pode popular um dropdown com isso.`,
+
+  health: `<strong>GET /health</strong><br>
+       Executa <code>SELECT 1</code> no BigQuery para validar conexão.<br>
+       Verifica presença da <code>ANTHROPIC_API_KEY</code> nas env vars.<br>
+       Response: <code>{"status": "ok"|"degraded", "bigquery": "ok"|"error: ...", "anthropic_key_set": true}</code><br>
+       Usado por Kubernetes liveness probe, load balancers, monitoring.`,
+
+  dashboard: `<strong>POST /dashboard — 501 WIP (Fase 5)</strong><br>
+       Stub que retorna 501 com mensagem explicativa.<br>
+       Objetivo da Fase 5: receber descrição em linguagem natural e gerar spec JSON de dashboard<br>
+       compatível com Metabase API, Grafana JSON Model, e Looker Studio config.<br>
+       Já documentado no OpenAPI para que integrações possam apontar para o endpoint.`,
+};
+
+const detailsSt = {
+  input: `<strong>Chat Input</strong> — duas formas de disparar uma pergunta:<br>
+          <code>st.chat_input("...")</code>: campo de texto na base da tela<br>
+          Botões de exemplo no sidebar: clique seta <code>session_state["pending_question"]</code> e chama <code>st.rerun()</code><br>
+          Ambos resultam na mesma variável <code>question</code> que alimenta o POST /ask.`,
+
+  session: `<strong>st.session_state["messages"]</strong> — histórico persistente por sessão do browser.<br>
+            Cada mensagem armazenada: <code>{"role": "user"|"assistant", "content": str, "charts": [], "tool_calls": []}</code><br>
+            Ao recarregar a página ou abrir nova aba, o histórico é perdido (Streamlit não persiste entre sessões).<br>
+            Sem banco de dados — tudo em memória no processo Streamlit.`,
+
+  apicall: `<strong>POST /ask via requests</strong><br>
+            URL: <code>http://localhost:8001/ask</code> (configurável via <code>API_BASE_URL</code>)<br>
+            Timeout: 120s — queries BigQuery podem demorar, Claude API pode ter latência<br>
+            Erros tratados separadamente: <code>ConnectionError</code> (API offline), <code>Timeout</code>, <code>HTTPError</code><br>
+            Exibe <code>st.spinner("Consultando o warehouse...")</code> enquanto aguarda.`,
+
+  fastapi: `<strong>FastAPI → Agent Loop</strong> — o mesmo fluxo da aba "Loop Agentico".<br>
+            O Streamlit não conhece os internos do loop — só vê o JSON final da <code>AskResponse</code>.<br>
+            Latência típica: 3-15s dependendo do número de tool calls e queries BigQuery.`,
+
+  askresponse: `<strong>AskResponse (Phase 7 — atualizado)</strong><br>
+                Campos relevantes para o Streamlit:<br>
+                <code>answer</code>: string markdown — renderizado com <code>st.markdown()</code><br>
+                <code>charts</code>: <code>list[ChartSpec]</code> — cada spec vira um <code>go.Figure</code> Plotly<br>
+                <code>tool_calls</code>: <code>list[ToolCallRecord]</code> — exibidos no <code>st.expander("Fontes")</code><br>
+                <code>total_elapsed_ms</code>: exibido como <code>st.caption("⏱ Xs")</code>`,
+
+  markdown: `<strong>st.markdown(answer)</strong><br>
+             O agente formata a resposta em markdown (negrito, tabelas, listas).<br>
+             Streamlit renderiza markdown nativamente — tabelas ficam com HTML formatado.<br>
+             Renderizado dentro de <code>st.chat_message("assistant")</code> para manter o visual de chat.`,
+
+  plotly: `<strong>Plotly inline via ChartSpec</strong><br>
+           Cada <code>ChartSpec</code> em <code>charts[]</code> passa pela função <code>render_chart(spec)</code>:<br>
+           Cria <code>go.Figure</code> com <code>go.Bar / go.Scatter / go.Pie</code> conforme <code>chart_type</code><br>
+           Suporta múltiplas séries (<code>values = list[list[float]]</code> + <code>series_names</code>)<br>
+           Renderizado com <code>st.plotly_chart(fig, use_container_width=True)</code> — interativo (hover, zoom).`,
+
+  expander: `<strong>st.expander("Fontes")</strong> — colapsável por padrão.<br>
+             Para cada <code>ToolCallRecord</code> exibe:<br>
+             • <code>st.markdown("**Tool:** tool_name")</code><br>
+             • <code>st.json(parameters)</code> — parâmetros da chamada<br>
+             • <code>st.code(sql_executed, language="sql")</code> — SQL enviado ao BigQuery<br>
+             • <code>st.caption("Linhas: N | Xms")</code> — métricas de performance`,
+};
+
+const detailsT5 = {
+  list: `<strong>list_metrics</strong><br>
+         Sem parâmetros. Retorna <code>format_catalog_for_agent()</code> — texto formatado com todas as 8 métricas.<br>
+         <strong>Quando usar:</strong> antes de <code>query_metric</code> quando não sabe o nome exato, ou para comparar métricas similares (ex: delivered_revenue vs net_revenue).<br>
+         <strong>Quando NÃO usar:</strong> se já sabe o nome da métrica — pule direto para <code>query_metric</code>.`,
+
+  query: `<strong>query_metric</strong><br>
+          Parâmetros: <code>metric</code> (obrigatório), <code>dimensions[]</code>, <code>period</code>, <code>filters{}</code>, <code>limit</code><br>
+          Gera SQL via <code>query_builder.build_metric_query()</code> — validado por <code>available_dimensions</code> da métrica.<br>
+          <strong>Quando usar:</strong> sempre que uma das 8 métricas cobrir a pergunta.<br>
+          <strong>Quando NÃO usar:</strong> dimensão <code>category</code> não disponível — fct_orders não tem essa coluna. Para análise por categoria, use <code>run_sql_readonly</code> com JOIN em <code>marts.dim_products</code>.`,
+
+  sql: `<strong>run_sql_readonly</strong><br>
+        Parâmetros: <code>sql</code> (obrigatório), <code>reason</code> (por que query_metric não bastou)<br>
+        Validação: <code>sql_validator.py</code> — parseia AST com sqlglot, bloqueia DDL/DML, exige schema <code>marts.*</code>, injeta LIMIT ≤ 1000.<br>
+        <strong>Quando usar:</strong> JOINs entre tabelas (ex: fct_orders + dim_products para ticket por categoria), agregações não cobertas pelas métricas.<br>
+        <strong>Quando NÃO usar:</strong> quando <code>query_metric</code> já cobre — mais seguro, mais rápido, menos tokens.`,
+
+  lineage: `<strong>get_lineage</strong><br>
+             Parâmetro: <code>model</code> — nome do modelo dbt.<br>
+             Modelos disponíveis: <code>fct_orders, dim_customers, dim_customers_kpis, dim_products, agg_daily_revenue</code><br>
+             Retorna: origem do dado, transformações aplicadas no staging, grão e colunas principais.<br>
+             <strong>Quando usar:</strong> antes de escrever SQL livre para verificar se uma coluna existe e em qual tabela.<br>
+             <strong>Quando NÃO usar:</strong> se já sabe as colunas — evita iteração desnecessária (MAX_ITERATIONS = 12).`,
+
+  plot: `<strong>plot_chart — NOVA (Phase 7)</strong><br>
+          Parâmetros: <code>chart_type</code> (bar/bar_horizontal/line/pie), <code>title</code>, <code>labels[]</code>, <code>values[]</code>, <code>series_names[]</code>, <code>x_label</code>, <code>y_label</code><br>
+          <strong>Não executa query.</strong> Apenas registra spec em <code>executor.charts_log[]</code>.<br>
+          O Streamlit lê <code>AskResponse.charts[]</code> e renderiza <code>go.Figure</code> Plotly inline.<br>
+          <strong>Quando usar:</strong> APÓS ter os dados — nunca antes. Para comparações categóricas (bar), evolução temporal (line), partes de um todo (pie).<br>
+          <strong>Quando NÃO usar:</strong> valor único (KPI simples), >10 categorias em pie, quando o texto já basta.`,
+};
+
+function showDetailSt(key) {
+  const panel = document.getElementById('detail-st-panel');
+  panel.innerHTML = detailsSt[key] || '';
+}
+
+function showDetailT5(key) {
+  const panel = document.getElementById('detail-t5-panel');
+  panel.innerHTML = detailsT5[key] || '';
+}
+
+function showDetail(key) {
+  document.querySelectorAll('.node').forEach(n => n.classList.remove('active-node'));
+  event.currentTarget.classList.add('active-node');
+  const panel = document.getElementById('detail-panel');
+  panel.innerHTML = details[key] || '';
+}
+
+function showDetailArch(key) {
+  const panel = document.getElementById('detail-arch-panel');
+  panel.innerHTML = detailsArch[key] || '';
+}
+
+function showDetailEp(key) {
+  const panel = document.getElementById('detail-ep-panel');
+  panel.innerHTML = detailsEp[key] || '';
+}
+</script>
+</body>
+</html>

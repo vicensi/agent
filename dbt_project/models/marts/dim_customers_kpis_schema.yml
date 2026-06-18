@@ -113,7 +113,14 @@ models:
 
       - name: avg_order_value_brl
         data_type: numeric
-        description: "Ticket médio do cliente ao longo de toda a vida (pedidos entregues), em BRL."
+        description: >
+          Ticket médio do cliente ao longo de toda a vida (pedidos entregues), em BRL.
+          NÃO-ADITIVO — AVG pré-calculado por cliente. Usar AVG(avg_order_value_brl) no Looker
+          retorna média de médias (errado para ticket geral). Para ticket médio global,
+          use fct_orders com AVG(total_amount_brl).
+        meta:
+          bi_aggregation: "non_additive"
+          bi_replacement: "Use fct_orders — AVG(total_amount_brl)"
         tests:
           - dbt_utils.accepted_range:
               arguments:
@@ -124,10 +131,18 @@ models:
         description: "Maior valor de pedido individual entregue pelo cliente, em BRL."
 
       # ── JANELAS TEMPORAIS ─────────────────────────────────────────────────────
+      # ⚠ AVISO: campos calculados com CURRENT_DATE() no momento do dbt run.
+      # Com dados históricos (fim em 2024-12-30), todos retornam 0 em produção atual.
+      # Para análise de período no Looker Studio: use filtro de data sobre fct_orders.
 
       - name: orders_last_30d
         data_type: int64
-        description: "Pedidos entregues nos últimos 30 dias."
+        description: >
+          Pedidos entregues nos últimos 30 dias (relativo ao dbt run).
+          ⚠ Retorna 0 com dados históricos — use filtro de data no Looker sobre fct_orders.
+        meta:
+          bi_aggregation: "non_additive"
+          bi_warning: "CURRENT_DATE() — valor zero com dados históricos"
         tests:
           - dbt_utils.accepted_range:
               arguments:
@@ -135,7 +150,12 @@ models:
 
       - name: revenue_last_30d
         data_type: numeric
-        description: "Receita de pedidos entregues nos últimos 30 dias, em BRL."
+        description: >
+          Receita de pedidos entregues nos últimos 30 dias, em BRL (relativo ao dbt run).
+          ⚠ Retorna 0 com dados históricos — use filtro de data no Looker sobre agg_daily_revenue.
+        meta:
+          bi_aggregation: "non_additive"
+          bi_warning: "CURRENT_DATE() — valor zero com dados históricos"
         tests:
           - dbt_utils.accepted_range:
               arguments:
@@ -143,36 +163,51 @@ models:
 
       - name: orders_last_60d
         data_type: int64
-        description: "Pedidos entregues nos últimos 60 dias."
+        description: "Pedidos entregues nos últimos 60 dias (relativo ao dbt run). ⚠ Ver aviso de janelas temporais acima."
+        meta:
+          bi_warning: "CURRENT_DATE() — valor zero com dados históricos"
 
       - name: revenue_last_60d
         data_type: numeric
-        description: "Receita de pedidos entregues nos últimos 60 dias, em BRL."
+        description: "Receita dos últimos 60 dias, em BRL (relativo ao dbt run). ⚠ Ver aviso de janelas temporais acima."
+        meta:
+          bi_warning: "CURRENT_DATE() — valor zero com dados históricos"
 
       - name: orders_last_90d
         data_type: int64
-        description: "Pedidos entregues nos últimos 90 dias."
+        description: "Pedidos entregues nos últimos 90 dias (relativo ao dbt run). ⚠ Ver aviso de janelas temporais acima."
+        meta:
+          bi_warning: "CURRENT_DATE() — valor zero com dados históricos"
 
       - name: revenue_last_90d
         data_type: numeric
-        description: "Receita de pedidos entregues nos últimos 90 dias, em BRL."
+        description: "Receita dos últimos 90 dias, em BRL (relativo ao dbt run). ⚠ Ver aviso de janelas temporais acima."
+        meta:
+          bi_warning: "CURRENT_DATE() — valor zero com dados históricos"
 
       # ── TENDÊNCIA ─────────────────────────────────────────────────────────────
 
       - name: revenue_last_4w
         data_type: numeric
-        description: "Receita das últimas 4 semanas (dias -28 a hoje), em BRL."
+        description: "Receita das últimas 4 semanas (dias -28 a hoje), em BRL. ⚠ Ver aviso de janelas temporais acima."
+        meta:
+          bi_warning: "CURRENT_DATE() — valor zero com dados históricos"
 
       - name: revenue_prev_4w
         data_type: numeric
-        description: "Receita das 4 semanas anteriores (dias -56 a -29), em BRL. Base de comparação para revenue_trend_pct."
+        description: "Receita das 4 semanas anteriores (dias -56 a -29), em BRL. ⚠ Ver aviso de janelas temporais acima."
+        meta:
+          bi_warning: "CURRENT_DATE() — valor zero com dados históricos"
 
       - name: revenue_trend_pct
         data_type: float64
         description: >
           Variação percentual da receita: últimas 4 semanas vs 4 semanas anteriores.
-          Positivo = crescimento. Negativo = queda. NULL = sem histórico nas 4 semanas anteriores.
-          Fórmula: (revenue_last_4w - revenue_prev_4w) / revenue_prev_4w * 100
+          Positivo = crescimento. Negativo = queda. NULL = sem histórico suficiente.
+          Fórmula: (revenue_last_4w - revenue_prev_4w) / revenue_prev_4w * 100.
+          ⚠ Retorna NULL com dados históricos (revenue_last_4w e revenue_prev_4w = 0).
+        meta:
+          bi_warning: "CURRENT_DATE() — NULL com dados históricos"
 
       # ── DEVOLUÇÕES ────────────────────────────────────────────────────────────
 

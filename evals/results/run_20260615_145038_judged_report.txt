@@ -1,0 +1,42 @@
+
+╔══════════════════════════════════════════════════════════╗
+║         AGENTIC DATA PLATFORM — EVAL REPORT              ║
+║         run_20260615_145038_judged.json                   ║
+╚══════════════════════════════════════════════════════════╝
+
+── RESUMO ──────────────────────────────────────────────────
+  Total de casos : 15
+  Erros de runner: 4
+  Casos válidos  : 11
+  Casos julgados : 11
+
+── MÉTRICAS ESTRUTURAIS (sem LLM) ──────────────────────────
+  Pass rate geral  : 91%
+  Citation rate    : 91%  (respostas com seção Fonte)
+  Refusal accuracy : 100%  (recusou quando deveria / não recusou quando não)
+  Tool correctness : 100%  (usou a tool esperada)
+
+── MÉTRICAS QUALITATIVAS (LLM-as-judge) ────────────────────
+  Qualidade média  : 0.0/5
+  Critérios pass   : 0%  (0/0 critérios)
+  Alucinações      : 0/11 casos
+
+── LATÊNCIA ────────────────────────────────────────────────
+  Média  : 16.8s
+  Máxima : 58.4s
+
+── POR CATEGORIA ───────────────────────────────────────────
+  catalog_first               : 1/1 pass
+  lineage                     : 1/1 pass
+  metric_period_specific      : 1/1 pass
+  metric_simple               : 1/1 pass
+  metric_with_dimension       : 2/2 pass
+  multi_tool                  : 1/1 pass
+  refusal_out_of_scope        : 3/3 pass
+  sql_custom                  : 0/1 pass
+
+── CASOS COM PROBLEMAS ─────────────────────────────────────
+  ❌ E08: Quantos clientes únicos compraram mais de uma vez nos último... [sem_citação]
+     Judge: Falha ao parsear resposta do judge.
+
+────────────────────────────────────────────────────────────

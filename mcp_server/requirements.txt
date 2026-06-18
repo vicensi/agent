@@ -1,0 +1,27 @@
+# MCP Server — Agentic Data Platform
+# Fase 3: MCP Server sobre BigQuery
+
+# Protocolo MCP — SDK oficial da Anthropic
+# FastMCP é a camada de alto nível sobre mcp.server.Server
+mcp>=1.0.0
+
+# BigQuery client — autenticação via service account (GCP_KEYFILE_PATH)
+google-cloud-bigquery>=3.11.0
+
+# Validação de SQL antes de executar no banco
+# Parseia SQL em AST e verifica statements permitidos
+sqlglot>=25.0.0
+
+# Carrega variáveis de ambiente do .env (GCP_PROJECT_ID, GCP_KEYFILE_PATH)
+python-dotenv>=1.0.0
+
+# Parse do YAML dos modelos dbt (para get_lineage e list_metrics)
+pyyaml>=6.0.0
+
+# Formatação de tabelas nos retornos das tools (legibilidade no Claude Desktop)
+tabulate>=0.9.0
+
+
+fastapi>=0.111.0
+
+anthropic>=0.28.0

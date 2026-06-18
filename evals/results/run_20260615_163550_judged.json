@@ -1,0 +1,932 @@
+[
+  {
+    "id": "V2-E01",
+    "category": "metric_simple",
+    "question": "Qual a receita entregue total de toda a história?",
+    "session_id": "eval-V2-E01-1781541056",
+    "elapsed_ms": 47000,
+    "response": {
+      "answer": "**A receita entregue total de toda a história é R$ 295.260.207,35.**\n\n**Dados:**\n| Receita Entregue (BRL) |\n|---|\n| R$ 295.260.207,35 |\n\n**Fonte:**\n- Ferramenta: `query_metric`\n- Métrica: `delivered_revenue`\n- Período: Toda a história (sem filtro de período)\n- Linhas retornadas: 1\n\n**Caveats:**\nNenhum — esta é a receita canonical de pedidos com status \"entregue\" do dataset completo.",
+      "tool_calls": [
+        {
+          "tool_name": "query_metric",
+          "parameters": {
+            "metric": "delivered_revenue",
+            "dimensions": null,
+            "period": null,
+            "filters": null
+          },
+          "sql_executed": "-- Métrica: Receita Entregue (BRL)\n-- Fonte: marts.fct_orders\n-- Gerado por: query_builder.build_metric_query()\n\nSELECT\n    SUM(CASE WHEN status = 'entregue' THEN total_amount_brl ELSE 0 END) AS delivered_revenue\nFROM `projeto-agents-499023.marts.fct_orders`\nLIMIT 500",
+          "row_count": 1,
+          "elapsed_ms": 7332
+        }
+      ],
+      "question": "Qual a receita entregue total de toda a história?",
+      "session_id": "eval-V2-E01-1781541056",
+      "total_elapsed_ms": 46947,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [
+        "query_metric"
+      ],
+      "expected_tools": [
+        "query_metric"
+      ],
+      "passed_all_structural": true
+    },
+    "judge_scores": {
+      "skipped": "Nenhum critério de judge definido para este caso."
+    },
+    "timestamp": "2026-06-15T16:31:43.276246"
+  },
+  {
+    "id": "V2-E02",
+    "category": "metric_with_dimension",
+    "question": "Qual a receita entregue por canal de vendas?",
+    "session_id": "eval-V2-E02-1781541103",
+    "elapsed_ms": 20849,
+    "response": {
+      "answer": "**A receita entregue é distribuída de forma relativamente equilibrada entre os cinco canais, com o marketplace liderando ligeiramente.**\n\n**Dados:**\n\n| Canal | Receita Entregue (BRL) |\n|-------|------------------------|\n| marketplace | 59.491.243,86 |\n| site_desktop | 59.306.213,32 |\n| app_ios | 59.154.515,10 |\n| app_android | 58.966.387,57 |\n| site_mobile | 58.341.847,50 |\n| **TOTAL** | **295.260.207,35** |\n\n**Fonte:**\n- Ferramenta: `query_metric`\n- Métrica: `delivered_revenue`\n- Dimensão: `channel`\n- Período: Toda a história (sem filtro de período)\n- Linhas retornadas: 5\n\n**Caveats:**\n- Os dados são sintéticos e cobrem aproximadamente 192k pedidos no histórico.\n- A distribuição é bastante equilibrada entre canais (diferença máxima de ~1,2 M entre o maior e menor canal).",
+      "tool_calls": [
+        {
+          "tool_name": "query_metric",
+          "parameters": {
+            "metric": "delivered_revenue",
+            "dimensions": [
+              "channel"
+            ],
+            "period": null,
+            "filters": null
+          },
+          "sql_executed": "-- Métrica: Receita Entregue (BRL)\n-- Fonte: marts.fct_orders\n-- Gerado por: query_builder.build_metric_query()\n\nSELECT\n    channel,\n    SUM(CASE WHEN status = 'entregue' THEN total_amount_brl ELSE 0 END) AS delivered_revenue\nFROM `projeto-agents-499023.marts.fct_orders`\nGROUP BY\n    channel\nORDER BY\n    channel\nLIMIT 500",
+          "row_count": 5,
+          "elapsed_ms": 12170
+        }
+      ],
+      "question": "Qual a receita entregue por canal de vendas?",
+      "session_id": "eval-V2-E02-1781541103",
+      "total_elapsed_ms": 20825,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [
+        "query_metric"
+      ],
+      "expected_tools": [
+        "query_metric"
+      ],
+      "passed_all_structural": true
+    },
+    "judge_scores": {
+      "skipped": "Nenhum critério de judge definido para este caso."
+    },
+    "timestamp": "2026-06-15T16:32:04.128971"
+  },
+  {
+    "id": "V2-E03",
+    "category": "metric_with_dimension",
+    "question": "Qual o ticket médio por canal de vendas?",
+    "session_id": "eval-V2-E03-1781541124",
+    "elapsed_ms": 9270,
+    "response": {
+      "answer": "**O ticket médio varia entre R$ 3.096 e R$ 3.144 entre os canais, com marketplace apresentando o maior valor.**\n\n**Dados:**\n\n| Canal | Ticket Médio (BRL) |\n|-------|-------------------|\n| app_android | R$ 3.117,94 |\n| app_ios | R$ 3.096,12 |\n| marketplace | R$ 3.143,69 |\n| site_desktop | R$ 3.114,33 |\n| site_mobile | R$ 3.098,67 |\n\n**Fonte:**\n- Ferramenta: `query_metric`\n- Métrica: `avg_order_value` (ticket médio em BRL)\n- Dimensão: `channel` (canal de vendas)\n- Período: toda a história disponível\n- Linhas retornadas: 5\n\n**Caveats:**\n- Apenas pedidos com status **\"entregue\"** foram considerados no cálculo\n- Os valores são sintéticos e representam um ambiente de teste\n- A diferença entre canais é pequena (~1,5%), sugerindo que o comportamento de compra é bastante similar entre eles",
+      "tool_calls": [
+        {
+          "tool_name": "query_metric",
+          "parameters": {
+            "metric": "avg_order_value",
+            "dimensions": [
+              "channel"
+            ],
+            "period": null,
+            "filters": null
+          },
+          "sql_executed": "-- Métrica: Ticket Médio (BRL)\n-- Fonte: marts.fct_orders\n-- Gerado por: query_builder.build_metric_query()\n\nSELECT\n    channel,\n    SAFE_DIVIDE(SUM(CASE WHEN status = 'entregue' THEN total_amount_brl ELSE 0 END), COUNT(DISTINCT CASE WHEN status = 'entregue' THEN order_id END)) AS avg_order_value\nFROM `projeto-agents-499023.marts.fct_orders`\nGROUP BY\n    channel\nORDER BY\n    channel\nLIMIT 500",
+          "row_count": 5,
+          "elapsed_ms": 1561
+        }
+      ],
+      "question": "Qual o ticket médio por canal de vendas?",
+      "session_id": "eval-V2-E03-1781541124",
+      "total_elapsed_ms": 9247,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [
+        "query_metric"
+      ],
+      "expected_tools": [
+        "query_metric"
+      ],
+      "passed_all_structural": true
+    },
+    "judge_scores": {
+      "skipped": "Nenhum critério de judge definido para este caso."
+    },
+    "timestamp": "2026-06-15T16:32:13.399819"
+  },
+  {
+    "id": "V2-E04",
+    "category": "metric_with_dimension",
+    "question": "Qual a taxa de devolução por canal? Algum canal se destaca negativamente?",
+    "session_id": "eval-V2-E04-1781541133",
+    "elapsed_ms": 16695,
+    "response": {
+      "answer": "**A taxa de devolução é bastante homogênea entre os canais, com o Marketplace se destacando ligeiramente negativamente (~8,07%), seguido por Android (~8,07%) e Desktop (~8,06%). Os canais iOS e Mobile apresentam as menores taxas (~7,80% e ~7,90%).**\n\n**Dados:**\n\n| Canal | Taxa de Devolução (%) |\n|-------|----------------------|\n| app_android | 8,07% |\n| app_ios | 7,80% |\n| marketplace | 8,07% |\n| site_desktop | 8,06% |\n| site_mobile | 7,90% |\n\n**Fonte:**\n- Ferramenta: `query_metric`\n- Métrica: `return_rate`\n- Dimensão: `channel`\n- Período: toda a história dos dados\n- Linhas retornadas: 5\n\n**Caveats:**\nA diferença entre o canal com maior taxa (Marketplace/Android: 8,07%) e o com menor taxa (iOS: 7,80%) é de apenas **0,27 pontos percentuais**, o que pode não ser estatisticamente significativo. Todos os canais operam em um range muito similar (7,80% - 8,07%), sugerindo que **não há um problema sistêmico de devolução concentrado em um canal específico**.",
+      "tool_calls": [
+        {
+          "tool_name": "query_metric",
+          "parameters": {
+            "metric": "return_rate",
+            "dimensions": [
+              "channel"
+            ],
+            "period": null,
+            "filters": null
+          },
+          "sql_executed": "-- Métrica: Taxa de Devolução (%)\n-- Fonte: marts.fct_orders\n-- Gerado por: query_builder.build_metric_query()\n\nSELECT\n    channel,\n    SAFE_DIVIDE(COUNTIF(has_return = true AND status = 'entregue'), COUNT(DISTINCT CASE WHEN status = 'entregue' THEN order_id END)) * 100 AS return_rate\nFROM `projeto-agents-499023.marts.fct_orders`\nGROUP BY\n    channel\nORDER BY\n    channel\nLIMIT 500",
+          "row_count": 5,
+          "elapsed_ms": 2023
+        }
+      ],
+      "question": "Qual a taxa de devolução por canal? Algum canal se destaca negativamente?",
+      "session_id": "eval-V2-E04-1781541133",
+      "total_elapsed_ms": 16678,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [
+        "query_metric"
+      ],
+      "expected_tools": [
+        "query_metric"
+      ],
+      "passed_all_structural": true
+    },
+    "judge_scores": {
+      "skipped": "Nenhum critério de judge definido para este caso."
+    },
+    "timestamp": "2026-06-15T16:32:30.095443"
+  },
+  {
+    "id": "V2-E05",
+    "category": "metric_with_dimension",
+    "question": "Qual a receita entregue por estado do cliente? Mostra os top 10.",
+    "session_id": "eval-V2-E05-1781541150",
+    "elapsed_ms": 10831,
+    "response": {
+      "answer": "**São Paulo lidera a receita entregue com R$ 44,9 milhões, seguido pelo Rio de Janeiro (R$ 36,8 milhões). Os demais estados variam entre R$ 25,6 e R$ 27,9 milhões.**\n\n**Dados:**\n\n| Estado | Receita Entregue (BRL) |\n|--------|------------------------|\n| SP     | 44.911.477,04          |\n| RJ     | 36.835.663,36          |\n| SC     | 27.900.927,75          |\n| RS     | 27.169.285,77          |\n| PE     | 27.099.751,83          |\n| MG     | 26.543.378,45          |\n| PR     | 26.482.984,57          |\n| GO     | 26.392.875,25          |\n| CE     | 26.297.937,20          |\n| BA     | 25.625.926,13          |\n\n**Fonte:**\n- Ferramenta: `query_metric`\n- Métrica: `delivered_revenue`\n- Dimensão: `customer_state`\n- Período: toda a história disponível\n- Linhas retornadas: 10\n\n**Caveats:**\nOs dados são sintéticos e incluem apenas os 10 primeiros estados (conforme limite solicitado). O ranking foi ordenado alfabeticamente; se desejar os 10 estados com MAIOR receita, posso reordenar.",
+      "tool_calls": [
+        {
+          "tool_name": "query_metric",
+          "parameters": {
+            "metric": "delivered_revenue",
+            "dimensions": [
+              "customer_state"
+            ],
+            "period": null,
+            "filters": null
+          },
+          "sql_executed": "-- Métrica: Receita Entregue (BRL)\n-- Fonte: marts.fct_orders\n-- Gerado por: query_builder.build_metric_query()\n\nSELECT\n    customer_state,\n    SUM(CASE WHEN status = 'entregue' THEN total_amount_brl ELSE 0 END) AS delivered_revenue\nFROM `projeto-agents-499023.marts.fct_orders`\nGROUP BY\n    customer_state\nORDER BY\n    customer_state\nLIMIT 10",
+          "row_count": 10,
+          "elapsed_ms": 903
+        }
+      ],
+      "question": "Qual a receita entregue por estado do cliente? Mostra os top 10.",
+      "session_id": "eval-V2-E05-1781541150",
+      "total_elapsed_ms": 10805,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [
+        "query_metric"
+      ],
+      "expected_tools": [
+        "query_metric"
+      ],
+      "passed_all_structural": true
+    },
+    "judge_scores": {
+      "skipped": "Nenhum critério de judge definido para este caso."
+    },
+    "timestamp": "2026-06-15T16:32:40.926795"
+  },
+  {
+    "id": "V2-E06",
+    "category": "metric_with_dimension",
+    "question": "Qual a receita entregue por categoria de produto?",
+    "session_id": "eval-V2-E06-1781541160",
+    "elapsed_ms": 26225,
+    "response": {
+      "answer": "**A receita entregue é liderada por eletrônicos (R$ 232.5M), seguida por casa (R$ 33.2M) e moda (R$ 12.9M).**\n\n**Dados:**\n\n| Categoria | Receita Entregue (R$) | Quantidade de Pedidos |\n|-----------|----------------------|----------------------|\n| Eletrônicos | 232.540.670,34 | 28.461 |\n| Casa | 33.188.944,46 | 19.166 |\n| Moda | 12.901.590,32 | 18.743 |\n| Acessórios | 8.361.686,98 | 9.551 |\n| Saúde | 5.875.061,11 | 9.374 |\n| Livros | 2.392.254,14 | 9.518 |\n\n**Fonte:**\n- Ferramenta: `run_sql_readonly`\n- SQL: Query GROUP BY na tabela `marts.fct_orders` filtrando `delivered_revenue_brl > 0`\n- Período: Histórico completo (toda a base)\n- Linhas retornadas: 6\n\n**Caveats:**\n- Os dados são sintéticos e não representam uma empresa real.\n- Incluídos apenas pedidos com receita entregue positiva (status aprovado/entregue).",
+      "tool_calls": [
+        {
+          "tool_name": "get_lineage",
+          "parameters": {
+            "model": "fct_orders"
+          },
+          "sql_executed": null,
+          "row_count": null,
+          "elapsed_ms": null
+        },
+        {
+          "tool_name": "get_lineage",
+          "parameters": {
+            "model": "dim_products"
+          },
+          "sql_executed": null,
+          "row_count": null,
+          "elapsed_ms": null
+        },
+        {
+          "tool_name": "run_sql_readonly",
+          "parameters": {
+            "reason": "Preciso verificar o nome exato das colunas em fct_orders para fazer o join correto com dim_products."
+          },
+          "sql_executed": "SELECT *\nFROM marts.fct_orders\nLIMIT 1",
+          "row_count": 1,
+          "elapsed_ms": 3910
+        },
+        {
+          "tool_name": "run_sql_readonly",
+          "parameters": {
+            "reason": "A coluna category está disponível diretamente em fct_orders, assim consigo desagregar a receita entregue por categoria de produto sem necessidade de join."
+          },
+          "sql_executed": "SELECT \n  category as product_category,\n  SUM(delivered_revenue_brl) as total_delivered_revenue,\n  COUNT(DISTINCT order_id) as order_count\nFROM marts.fct_orders\nWHERE delivered_revenue_brl > 0\nGROUP BY category\nORDER BY total_delivered_revenue DESC\nLIMIT 1000",
+          "row_count": 6,
+          "elapsed_ms": 2793
+        }
+      ],
+      "question": "Qual a receita entregue por categoria de produto?",
+      "session_id": "eval-V2-E06-1781541160",
+      "total_elapsed_ms": 26203,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": false,
+      "no_api_error": true,
+      "tools_used": [
+        "get_lineage",
+        "run_sql_readonly"
+      ],
+      "expected_tools": [
+        "query_metric"
+      ],
+      "passed_all_structural": false
+    },
+    "judge_scores": {
+      "skipped": "Nenhum critério de judge definido para este caso."
+    },
+    "timestamp": "2026-06-15T16:33:07.152406"
+  },
+  {
+    "id": "V2-E07",
+    "category": "metric_comparison",
+    "question": "Compare a receita bruta com a receita líquida total. Quanto foi perdido em devoluções?",
+    "session_id": "eval-V2-E07-1781541187",
+    "elapsed_ms": 30469,
+    "response": {
+      "answer": "**A receita bruta foi de R$ 504,4 milhões, a receita líquida de R$ 558,8 milhões, e R$ 35,7 milhões foram perdidos em devoluções.**\n\n**Dados:**\n\n| Métrica | Valor (BRL) |\n|---------|-------------|\n| **Receita Bruta** | R$ 504.430.612,68 |\n| **Receita Devolvida** | R$ 35.697.167,72 |\n| **Receita Líquida** | R$ 558.800.229,69 |\n| **Perda em Devoluções (%)** | 7,06% |\n\n**Fonte:**\n- Ferramenta: `query_metric`\n- Métricas consultadas:\n  - `gross_revenue` — receita com pedidos aprovados, enviados ou entregues\n  - `net_revenue` — receita após devoluções\n  - `returned_revenue` — valor total devolvido\n- Período: Toda a história (sem filtro temporal)\n- Linhas retornadas: 1 cada\n\n**Caveats:**\n- A receita líquida (R$ 558,8M) é **maior** que a bruta (R$ 504,4M), o que sugere que a métrica `net_revenue` pode incluir ajustes adicionais (ex: créditos, descontos, ou receitas em trânsito que foram posteriormente processadas).\n- A perda efetiva em devoluções é **R$ 35,7 milhões**, correspondendo a **7,06% da receita bruta**.\n- Os dados são sintéticos e não representam uma empresa real.",
+      "tool_calls": [
+        {
+          "tool_name": "query_metric",
+          "parameters": {
+            "metric": "gross_revenue",
+            "dimensions": null,
+            "period": null,
+            "filters": null
+          },
+          "sql_executed": "-- Métrica: Receita Bruta (BRL)\n-- Fonte: marts.fct_orders\n-- Gerado por: query_builder.build_metric_query()\n\nSELECT\n    SUM(CASE WHEN status IN ('aprovado', 'enviado', 'entregue') THEN total_amount_brl ELSE 0 END) AS gross_revenue\nFROM `projeto-agents-499023.marts.fct_orders`\nLIMIT 500",
+          "row_count": 1,
+          "elapsed_ms": 1757
+        },
+        {
+          "tool_name": "query_metric",
+          "parameters": {
+            "metric": "net_revenue",
+            "dimensions": null,
+            "period": null,
+            "filters": null
+          },
+          "sql_executed": "-- Métrica: Receita Líquida (BRL)\n-- Fonte: marts.fct_orders\n-- Gerado por: query_builder.build_metric_query()\n\nSELECT\n    SUM(net_revenue_brl) AS net_revenue\nFROM `projeto-agents-499023.marts.fct_orders`\nLIMIT 500",
+          "row_count": 1,
+          "elapsed_ms": 3452
+        },
+        {
+          "tool_name": "query_metric",
+          "parameters": {
+            "metric": "returned_revenue",
+            "dimensions": null,
+            "period": null,
+            "filters": null
+          },
+          "sql_executed": "-- Métrica: Receita Devolvida (BRL)\n-- Fonte: marts.fct_orders\n-- Gerado por: query_builder.build_metric_query()\n\nSELECT\n    SUM(CASE WHEN has_return = true THEN return_amount_brl ELSE 0 END) AS returned_revenue\nFROM `projeto-agents-499023.marts.fct_orders`\nLIMIT 500",
+          "row_count": 1,
+          "elapsed_ms": 1916
+        }
+      ],
+      "question": "Compare a receita bruta com a receita líquida total. Quanto foi perdido em devoluções?",
+      "session_id": "eval-V2-E07-1781541187",
+      "total_elapsed_ms": 30446,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [
+        "query_metric"
+      ],
+      "expected_tools": [
+        "query_metric"
+      ],
+      "passed_all_structural": true
+    },
+    "judge_scores": {
+      "skipped": "Nenhum critério de judge definido para este caso."
+    },
+    "timestamp": "2026-06-15T16:33:37.622159"
+  },
+  {
+    "id": "V2-E08",
+    "category": "catalog_first",
+    "question": "Quais métricas estão disponíveis e o que cada uma mede?",
+    "session_id": "eval-V2-E08-1781541217",
+    "elapsed_ms": 5788,
+    "response": {
+      "answer": "**Resumo das 8 métricas disponíveis:**\n\n| Métrica | O que mede | Unidade | Uso principal |\n|---------|-----------|---------|---------------|\n| **delivered_revenue** | Receita de pedidos entregues | BRL | ✅ Métrica **CANÔNICA** — use como base de receita realizada |\n| **gross_revenue** | Receita bruta (aprovado + enviado + entregue) | BRL | Pipeline de receita — inclui pedidos em trânsito |\n| **net_revenue** | Receita entregue menos devoluções | BRL | Receita real após estornos |\n| **returned_revenue** | Valor total de devoluções | BRL | Impacto financeiro de devoluções |\n| **delivered_orders** | Contagem de pedidos entregues | count | Denominador para cálculos de taxa e ticket |\n| **avg_order_value** | Receita entregue ÷ pedidos entregues | BRL | Ticket médio — saúde do negócio |\n| **return_rate** | % de pedidos com devolução | % | Taxa de devolução — qualidade e satisfação |\n| **active_customers_30d** | Clientes únicos com pedido entregue em 30 dias | count | Retenção de curto prazo |\n\n**Dimensões disponíveis para segmentar:** `channel` (app_ios, app_android, web_desktop, web_mobile, marketplace), `customer_state`, `created_date`, `status`, `customer_state`\n\nEstá pronto para consultar dados específicos! 📊",
+      "tool_calls": [
+        {
+          "tool_name": "list_metrics",
+          "parameters": {},
+          "sql_executed": null,
+          "row_count": null,
+          "elapsed_ms": null
+        }
+      ],
+      "question": "Quais métricas estão disponíveis e o que cada uma mede?",
+      "session_id": "eval-V2-E08-1781541217",
+      "total_elapsed_ms": 5767,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [
+        "list_metrics"
+      ],
+      "expected_tools": [
+        "list_metrics"
+      ],
+      "passed_all_structural": true
+    },
+    "judge_scores": {
+      "skipped": "Nenhum critério de judge definido para este caso."
+    },
+    "timestamp": "2026-06-15T16:33:43.410573"
+  },
+  {
+    "id": "V2-E09",
+    "category": "sql_custom",
+    "question": "Quantos pedidos únicos existem no total e qual o valor médio por pedido?",
+    "session_id": "eval-V2-E09-1781541223",
+    "elapsed_ms": 6630,
+    "response": {
+      "answer": "**Existem 94.813 pedidos únicos com valor médio de R$ 3.114,13 por pedido.**\n\n**Dados:**\n| Métrica | Valor |\n|---------|-------|\n| Pedidos Entregues (únicos) | 94.813 |\n| Valor Médio por Pedido (BRL) | R$ 3.114,13 |\n\n**Fonte:**\n- Ferramenta: `query_metric`\n- Métricas: `delivered_orders` e `avg_order_value`\n- Período: Toda a história (sem filtro de período)\n- Linhas retornadas: 1 por métrica\n\n**Caveats:**\n- Os números contam apenas pedidos com status **\"entregue\"** — pedidos em trânsito, cancelados ou devolvidos não estão inclusos nesta contagem.\n- Os dados são **sintéticos** e não representam uma empresa real.",
+      "tool_calls": [
+        {
+          "tool_name": "query_metric",
+          "parameters": {
+            "metric": "delivered_orders",
+            "dimensions": null,
+            "period": null,
+            "filters": null
+          },
+          "sql_executed": "-- Métrica: Pedidos Entregues\n-- Fonte: marts.fct_orders\n-- Gerado por: query_builder.build_metric_query()\n\nSELECT\n    COUNT(DISTINCT CASE WHEN status = 'entregue' THEN order_id END) AS delivered_orders\nFROM `projeto-agents-499023.marts.fct_orders`\nLIMIT 500",
+          "row_count": 1,
+          "elapsed_ms": 660
+        },
+        {
+          "tool_name": "query_metric",
+          "parameters": {
+            "metric": "avg_order_value",
+            "dimensions": null,
+            "period": null,
+            "filters": null
+          },
+          "sql_executed": "-- Métrica: Ticket Médio (BRL)\n-- Fonte: marts.fct_orders\n-- Gerado por: query_builder.build_metric_query()\n\nSELECT\n    SAFE_DIVIDE(SUM(CASE WHEN status = 'entregue' THEN total_amount_brl ELSE 0 END), COUNT(DISTINCT CASE WHEN status = 'entregue' THEN order_id END)) AS avg_order_value\nFROM `projeto-agents-499023.marts.fct_orders`\nLIMIT 500",
+          "row_count": 1,
+          "elapsed_ms": 945
+        }
+      ],
+      "question": "Quantos pedidos únicos existem no total e qual o valor médio por pedido?",
+      "session_id": "eval-V2-E09-1781541223",
+      "total_elapsed_ms": 6611,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": false,
+      "no_api_error": true,
+      "tools_used": [
+        "query_metric"
+      ],
+      "expected_tools": [
+        "run_sql_readonly"
+      ],
+      "passed_all_structural": false
+    },
+    "judge_scores": {
+      "skipped": "Nenhum critério de judge definido para este caso."
+    },
+    "timestamp": "2026-06-15T16:33:50.041530"
+  },
+  {
+    "id": "V2-E10",
+    "category": "sql_custom",
+    "question": "Quais os 5 produtos mais vendidos em receita entregue?",
+    "session_id": "eval-V2-E10-1781541230",
+    "elapsed_ms": 18400,
+    "response": {
+      "answer": "**Os 5 produtos (categorias) mais vendidos em receita entregue são dominados por Eletrônicos, que representa 86% da receita entregue total.**\n\n**Dados:**\n\n| Categoria | Receita Entregue (BRL) |\n|-----------|------------------------|\n| Eletrônicos | R$ 232.540.670,34 |\n| Casa | R$ 33.188.944,46 |\n| Moda | R$ 12.901.590,32 |\n| Acessórios | R$ 8.361.686,98 |\n| Saúde | R$ 5.875.061,11 |\n\n**Fonte:**\n- Ferramenta: `run_sql_readonly`\n- SQL: Agregação por categoria na tabela `marts.fct_orders` filtrando status='entregue'\n- Período: Histórico completo (dados sintéticos)\n- Linhas retornadas: 5\n\n**Caveats:**\n- A coluna `product_name` na tabela fct_orders está nula — usei a dimensão `category` como melhor alternativa para segmentação de produtos. Se você precisar de produtos individuais, esse nível de detalhe não está disponível no warehouse.",
+      "tool_calls": [
+        {
+          "tool_name": "list_metrics",
+          "parameters": {},
+          "sql_executed": null,
+          "row_count": null,
+          "elapsed_ms": null
+        },
+        {
+          "tool_name": "get_lineage",
+          "parameters": {
+            "model": "fct_orders"
+          },
+          "sql_executed": null,
+          "row_count": null,
+          "elapsed_ms": null
+        },
+        {
+          "tool_name": "run_sql_readonly",
+          "parameters": {
+            "reason": "Preciso verificar as colunas disponíveis na fct_orders antes de fazer a query."
+          },
+          "sql_executed": "SELECT * FROM marts.fct_orders LIMIT 1",
+          "row_count": 1,
+          "elapsed_ms": 721
+        },
+        {
+          "tool_name": "run_sql_readonly",
+          "parameters": {
+            "reason": "A coluna product_name na fct_orders está nula. Vou usar a dimensão 'category' disponível para trazer os 5 maiores em receita entregue."
+          },
+          "sql_executed": "SELECT \n  category,\n  SUM(delivered_revenue_brl) as delivered_revenue_brl\nFROM marts.fct_orders\nWHERE status = 'entregue'\nGROUP BY category\nORDER BY delivered_revenue_brl DESC\nLIMIT 5",
+          "row_count": 5,
+          "elapsed_ms": 767
+        }
+      ],
+      "question": "Quais os 5 produtos mais vendidos em receita entregue?",
+      "session_id": "eval-V2-E10-1781541230",
+      "total_elapsed_ms": 18381,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [
+        "get_lineage",
+        "run_sql_readonly",
+        "list_metrics"
+      ],
+      "expected_tools": [
+        "run_sql_readonly",
+        "query_metric"
+      ],
+      "passed_all_structural": true
+    },
+    "judge_scores": {
+      "skipped": "Nenhum critério de judge definido para este caso."
+    },
+    "timestamp": "2026-06-15T16:34:08.442653"
+  },
+  {
+    "id": "V2-E11",
+    "category": "sql_custom",
+    "question": "Qual a proporção de pedidos por status (entregue, cancelado, enviado, etc.)?",
+    "session_id": "eval-V2-E11-1781541248",
+    "elapsed_ms": 9062,
+    "response": {
+      "answer": "**A distribuição de pedidos por status mostra que 49,9% foram entregues, 20% estão em transporte (enviados) e 15% aprovados, enquanto 9,9% foram cancelados e 5,1% aguardam pagamento.**\n\n**Dados:**\n\n| Status | Quantidade de Pedidos | Proporção (%) |\n|--------|----------------------|---------------|\n| Entregue | 94.813 | 49,9% |\n| Enviado | 38.026 | 20,01% |\n| Aprovado | 28.681 | 15,1% |\n| Cancelado | 18.842 | 9,92% |\n| Aguardando Pagamento | 9.638 | 5,07% |\n| **Total** | **189.700** | **100%** |\n\n**Fonte:**\n- Ferramenta: `run_sql_readonly`\n- SQL: COUNT(DISTINCT order_id) agrupado por status\n- Período: Toda a história (sem filtro de período)\n- Linhas retornadas: 5 status únicos\n\n**Caveats:**\n- Os dados são **sintéticos** e podem não refletir a realidade de uma empresa real.\n- O status reflete o estado atual do pedido no momento da análise; pedidos em \"enviado\" e \"aprovado\" estão no pipeline, não finalizados.\n- Total de ~190k pedidos inclui todo o histórico disponível no warehouse.",
+      "tool_calls": [
+        {
+          "tool_name": "list_metrics",
+          "parameters": {},
+          "sql_executed": null,
+          "row_count": null,
+          "elapsed_ms": null
+        },
+        {
+          "tool_name": "run_sql_readonly",
+          "parameters": {
+            "reason": "As métricas disponíveis cobrem apenas pedidos entregues. Preciso da distribuição completa de todos os status de pedidos (cancelado, enviado, entregue, etc.), que requer consulta direta à tabela fct_orders."
+          },
+          "sql_executed": "SELECT \n  status,\n  COUNT(DISTINCT order_id) as quantidade_pedidos,\n  ROUND(100.0 * COUNT(DISTINCT order_id) / SUM(COUNT(DISTINCT order_id)) OVER (), 2) as proporcao_percentual\nFROM `marts.fct_orders`\nGROUP BY status\nORDER BY quantidade_pedidos DESC\nLIMIT 1000",
+          "row_count": 5,
+          "elapsed_ms": 706
+        }
+      ],
+      "question": "Qual a proporção de pedidos por status (entregue, cancelado, enviado, etc.)?",
+      "session_id": "eval-V2-E11-1781541248",
+      "total_elapsed_ms": 9040,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [
+        "run_sql_readonly",
+        "list_metrics"
+      ],
+      "expected_tools": [
+        "run_sql_readonly"
+      ],
+      "passed_all_structural": true
+    },
+    "judge_scores": {
+      "skipped": "Nenhum critério de judge definido para este caso."
+    },
+    "timestamp": "2026-06-15T16:34:17.504950"
+  },
+  {
+    "id": "V2-E12",
+    "category": "sql_custom",
+    "question": "Quantos clientes únicos temos no total?",
+    "session_id": "eval-V2-E12-1781541257",
+    "elapsed_ms": 7120,
+    "response": {
+      "answer": "**Temos 60.195 clientes únicos no total.**\n\n**Dados:**\n| Clientes Únicos |\n|---|\n| 60.195 |\n\n**Fonte:**\n- Ferramenta: `run_sql_readonly`\n- Tabela: `marts.dim_customers`\n- SQL: `SELECT COUNT(DISTINCT customer_id) AS total_unique_customers FROM marts.dim_customers`\n- Linhas retornadas: 1\n\n**Caveats:**\nEste é o total histórico de clientes únicos que realizaram pedidos no dataset (dados sintéticos com ~192k pedidos).",
+      "tool_calls": [
+        {
+          "tool_name": "list_metrics",
+          "parameters": {},
+          "sql_executed": null,
+          "row_count": null,
+          "elapsed_ms": null
+        },
+        {
+          "tool_name": "run_sql_readonly",
+          "parameters": {
+            "reason": "A métrica 'active_customers_30d' retorna apenas clientes ativos nos últimos 30 dias. Para o total de clientes únicos em toda a história, preciso contar diretamente a tabela de dimensão de clientes.\""
+          },
+          "sql_executed": "SELECT COUNT(DISTINCT customer_id) AS total_unique_customers FROM marts.dim_customers\nLIMIT 1000",
+          "row_count": 1,
+          "elapsed_ms": 763
+        }
+      ],
+      "question": "Quantos clientes únicos temos no total?",
+      "session_id": "eval-V2-E12-1781541257",
+      "total_elapsed_ms": 7086,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [
+        "run_sql_readonly",
+        "list_metrics"
+      ],
+      "expected_tools": [
+        "run_sql_readonly",
+        "query_metric"
+      ],
+      "passed_all_structural": true
+    },
+    "judge_scores": {
+      "skipped": "Nenhum critério de judge definido para este caso."
+    },
+    "timestamp": "2026-06-15T16:34:24.625322"
+  },
+  {
+    "id": "V2-E13",
+    "category": "lineage",
+    "question": "De onde vêm os dados de receita? Quais transformações o pipeline faz antes de chegar nos marts?",
+    "session_id": "eval-V2-E13-1781541264",
+    "elapsed_ms": 6450,
+    "response": {
+      "answer": "**Origem e fluxo dos dados de receita:**\n\nOs dados de receita partem de **CSVs de seed** (dados brutos), passam por transformações em **staging** (deduplicação, cast de tipos, normalização) e chegam aos **marts** onde são calculadas as métricas de receita com joins adicionais.\n\n**Detalhamento:**\n\n| Etapa | Descrição |\n|-------|-----------|\n| **Origem (Raw)** | Arquivos CSV de seed |\n| **Staging** | Deduplicação de registros duplicados |\n| | Cast de tipos de dados |\n| | Normalização de valores |\n| **Marts (Layer Analytics)** | `fct_orders` — tabela de fatos com 1 linha por pedido (order_id) |\n| | Joins com dimensões (clientes, produtos, etc.) |\n| | **Cálculo de receita** (delivered, gross, net, returned) |\n| | `agg_daily_revenue` — agregação diária de fct_orders por (data_criação, canal) |\n\n**Modelos principais:**\n- **fct_orders**: grão de 1 linha/order_id. É a base para todas as métricas de receita.\n- **agg_daily_revenue**: agregado derivado de fct_orders, pré-calculado para performance (1 linha/dia+canal).\n\n**Fonte:**\n- Ferramenta: `get_lineage`\n- Modelos consultados: `fct_orders`, `agg_daily_revenue`\n\n**Caveats:**\nA linhagem retorna o fluxo geral. Para detalhes específicos sobre *quais* CSVs alimentam o seed ou o SQL exato das transformações em staging, você precisaria consultar a documentação do projeto dbt ou o código dos modelos no repositório.",
+      "tool_calls": [
+        {
+          "tool_name": "get_lineage",
+          "parameters": {
+            "model": "fct_orders"
+          },
+          "sql_executed": null,
+          "row_count": null,
+          "elapsed_ms": null
+        },
+        {
+          "tool_name": "get_lineage",
+          "parameters": {
+            "model": "agg_daily_revenue"
+          },
+          "sql_executed": null,
+          "row_count": null,
+          "elapsed_ms": null
+        }
+      ],
+      "question": "De onde vêm os dados de receita? Quais transformações o pipeline faz antes de chegar nos marts?",
+      "session_id": "eval-V2-E13-1781541264",
+      "total_elapsed_ms": 6431,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [
+        "get_lineage"
+      ],
+      "expected_tools": [
+        "get_lineage"
+      ],
+      "passed_all_structural": true
+    },
+    "judge_scores": {
+      "skipped": "Nenhum critério de judge definido para este caso."
+    },
+    "timestamp": "2026-06-15T16:34:31.076387"
+  },
+  {
+    "id": "V2-E14",
+    "category": "refusal_out_of_scope",
+    "question": "Qual vai ser a receita do próximo trimestre?",
+    "session_id": "eval-V2-E14-1781541271",
+    "elapsed_ms": 3289,
+    "response": {
+      "answer": "**Fora do escopo: Previsões futuras.**\n\nNão tenho capacidade de fazer previsões de receita para períodos futuros. Meu papel é analisar dados históricos e atuais do seu warehouse.\n\n**Posso ajudar com:**\n- 📊 **Receita histórica**: entregue, bruta, líquida em qualquer período (últimos 7, 30, 90, 180, 365 dias ou um trimestre específico do passado)\n- 📈 **Análise de tendências**: comparar receita entre períodos passados para entender padrões\n- 🔍 **Análise por dimensão**: receita por canal, estado, categoria de produto, segmento de cliente\n- 📉 **Comparações**: performance entre trimestres/períodos anteriores\n\n**Exemplo do que posso responder:**\n- \"Qual foi a receita entregue do trimestre passado?\"\n- \"Como a receita evoluiu nos últimos 12 meses?\"\n- \"Qual canal gerou mais receita em 2024?\"\n\nQuer que eu analise algum desses pontos?",
+      "tool_calls": [],
+      "question": "Qual vai ser a receita do próximo trimestre?",
+      "session_id": "eval-V2-E14-1781541271",
+      "total_elapsed_ms": 3272,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [],
+      "expected_tools": [],
+      "passed_all_structural": true
+    },
+    "judge_scores": {
+      "skipped": "Nenhum critério de judge definido para este caso."
+    },
+    "timestamp": "2026-06-15T16:34:34.368105"
+  },
+  {
+    "id": "V2-E15",
+    "category": "refusal_out_of_scope",
+    "question": "Quem é o gerente de vendas responsável pelo canal marketplace?",
+    "session_id": "eval-V2-E15-1781541274",
+    "elapsed_ms": 2980,
+    "response": {
+      "answer": "Fora do escopo: A plataforma de dados de e-commerce que tenho acesso contém apenas **dados transacionais e de negócio** (pedidos, receita, clientes, produtos, canais). Não tenho acesso a dados de **recursos humanos, organização ou estrutura gerencial** da empresa.\n\n**Posso ajudar com:**\n- Análise de desempenho do canal marketplace (receita, volume de pedidos, taxa de retorno)\n- Comparação do marketplace com outros canais (app_ios, app_android, web_desktop, web_mobile)\n- Tendências de vendas e clientes no marketplace\n\nDeseja explorar alguma dessas análises sobre o marketplace?",
+      "tool_calls": [],
+      "question": "Quem é o gerente de vendas responsável pelo canal marketplace?",
+      "session_id": "eval-V2-E15-1781541274",
+      "total_elapsed_ms": 2959,
+      "refused": true
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [],
+      "expected_tools": [],
+      "passed_all_structural": true
+    },
+    "judge_scores": {
+      "skipped": "Nenhum critério de judge definido para este caso."
+    },
+    "timestamp": "2026-06-15T16:34:37.348959"
+  },
+  {
+    "id": "V2-E16",
+    "category": "metric_with_dimension",
+    "question": "Qual a receita entregue por canal E por categoria de produto juntos?",
+    "session_id": "eval-V2-E16-1781541277",
+    "elapsed_ms": 48527,
+    "response": {
+      "answer": "**A receita entregue cruzada por canal e categoria de produto mostra que eletrônicos dominam em todos os canais, sendo marketplace e site_desktop os maiores geradores de receita.**\n\n**Dados:**\n\n| Canal | Categoria | Receita Entregue (BRL) | Pedidos |\n|-------|-----------|------------------------|---------|\n| marketplace | eletrônicos | R$ 46.881.454,03 | 5.668 |\n| site_desktop | eletrônicos | R$ 46.763.827,80 | 5.701 |\n| app_android | eletrônicos | R$ 46.557.363,48 | 5.796 |\n| app_ios | eletrônicos | R$ 46.535.268,26 | 5.669 |\n| site_mobile | eletrônicos | R$ 45.802.756,77 | 5.627 |\n| marketplace | casa | R$ 6.683.197,12 | 3.810 |\n| site_desktop | casa | R$ 6.659.551,03 | 3.810 |\n| app_ios | casa | R$ 6.646.943,67 | 3.893 |\n| site_mobile | casa | R$ 6.632.433,49 | 3.859 |\n| app_android | casa | R$ 6.566.819,15 | 3.794 |\n| app_ios | moda | R$ 2.656.891,03 | 3.852 |\n| site_desktop | moda | R$ 2.588.860,03 | 3.790 |\n| marketplace | moda | R$ 2.574.446,12 | 3.699 |\n| site_mobile | moda | R$ 2.561.187,33 | 3.677 |\n| app_android | moda | R$ 2.520.205,81 | 3.725 |\n| **[16 linhas adicionais com categorias saúde, acessórios e livros]** | | |\n\n*(Dados completos: 30 linhas retornadas)*\n\n**Fonte:**\n- Ferramenta: `run_sql_readonly`\n- SQL: `SELECT channel, category, SUM(delivered_revenue_brl), COUNT(DISTINCT order_id) FROM marts.fct_orders WHERE status = 'entregue' GROUP BY channel, category ORDER BY delivered_revenue_brl DESC`\n- Período: História completa\n- Linhas retornadas: 30\n\n**Caveats:**\n- Métrica `delivered_revenue` da plataforma suporta apenas dimensões `created_date`, `channel`, `status`, `customer_state` — por isso foi necessário usar SQL direto.\n- Dados são sintéticos e não representam uma empresa real.\n- Os 5 canais principais são: marketplace, site_desktop, app_android, app_ios e site_mobile.\n- As 6 categorias de produtos são: eletrônicos, casa, moda, acessórios, saúde e livros.",
+      "tool_calls": [
+        {
+          "tool_name": "list_metrics",
+          "parameters": {},
+          "sql_executed": null,
+          "row_count": null,
+          "elapsed_ms": null
+        },
+        {
+          "tool_name": "get_lineage",
+          "parameters": {
+            "model": "fct_orders"
+          },
+          "sql_executed": null,
+          "row_count": null,
+          "elapsed_ms": null
+        },
+        {
+          "tool_name": "run_sql_readonly",
+          "parameters": {
+            "reason": "Preciso ver a estrutura das colunas da tabela fct_orders para entender como está relacionada com produtos."
+          },
+          "sql_executed": "SELECT * FROM marts.fct_orders LIMIT 1",
+          "row_count": 1,
+          "elapsed_ms": 557
+        },
+        {
+          "tool_name": "run_sql_readonly",
+          "parameters": {
+            "reason": "Métrica delivered_revenue não suporta dimensão product_category. As colunas category e delivered_revenue_brl estão em fct_orders."
+          },
+          "sql_executed": "SELECT \n  channel,\n  category AS product_category,\n  SUM(delivered_revenue_brl) AS delivered_revenue_brl,\n  COUNT(DISTINCT order_id) AS delivered_orders_count\nFROM marts.fct_orders\nWHERE status = 'entregue'\nGROUP BY channel, category\nORDER BY delivered_revenue_brl DESC\nLIMIT 1000",
+          "row_count": 30,
+          "elapsed_ms": 1926
+        }
+      ],
+      "question": "Qual a receita entregue por canal E por categoria de produto juntos?",
+      "session_id": "eval-V2-E16-1781541277",
+      "total_elapsed_ms": 48505,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [
+        "get_lineage",
+        "run_sql_readonly",
+        "list_metrics"
+      ],
+      "expected_tools": [
+        "run_sql_readonly",
+        "query_metric"
+      ],
+      "passed_all_structural": true
+    },
+    "judge_scores": {
+      "skipped": "Nenhum critério de judge definido para este caso."
+    },
+    "timestamp": "2026-06-15T16:35:25.876332"
+  },
+  {
+    "id": "V2-E17",
+    "category": "metric_simple",
+    "question": "Quantos pedidos foram entregues no total?",
+    "session_id": "eval-V2-E17-1781541325",
+    "elapsed_ms": 16819,
+    "response": {
+      "answer": "**Foram entregues um total de 94.813 pedidos.**\n\n**Dados:**\n| Pedidos Entregues |\n|---|\n| 94.813 |\n\n**Fonte:**\n- Ferramenta: `query_metric`\n- Métrica: `delivered_orders`\n- Período: Toda a história (sem filtro de período)\n- Linhas retornadas: 1\n\n**Caveats:**\nNenhum — este é um valor agregado de toda a base de dados sintética disponível.",
+      "tool_calls": [
+        {
+          "tool_name": "query_metric",
+          "parameters": {
+            "metric": "delivered_orders",
+            "dimensions": null,
+            "period": null,
+            "filters": null
+          },
+          "sql_executed": "-- Métrica: Pedidos Entregues\n-- Fonte: marts.fct_orders\n-- Gerado por: query_builder.build_metric_query()\n\nSELECT\n    COUNT(DISTINCT CASE WHEN status = 'entregue' THEN order_id END) AS delivered_orders\nFROM `projeto-agents-499023.marts.fct_orders`\nLIMIT 500",
+          "row_count": 1,
+          "elapsed_ms": 7201
+        }
+      ],
+      "question": "Quantos pedidos foram entregues no total?",
+      "session_id": "eval-V2-E17-1781541325",
+      "total_elapsed_ms": 16807,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [
+        "query_metric"
+      ],
+      "expected_tools": [
+        "query_metric"
+      ],
+      "passed_all_structural": true
+    },
+    "judge_scores": {
+      "skipped": "Nenhum critério de judge definido para este caso."
+    },
+    "timestamp": "2026-06-15T16:35:42.695906"
+  },
+  {
+    "id": "V2-E18",
+    "category": "sql_custom",
+    "question": "Qual o valor total devolvido e quantos pedidos tiveram devolução?",
+    "session_id": "eval-V2-E18-1781541342",
+    "elapsed_ms": 8185,
+    "response": {
+      "answer": "**O valor total devolvido foi R$ 35.697.167,72, com 15.108 pedidos que tiveram devolução.**\n\n**Dados:**\n\n| Métrica | Valor |\n|---------|-------|\n| Receita Devolvida | R$ 35.697.167,72 |\n| Pedidos com Devolução | 15.108 |\n| Total de Pedidos Entregues | 94.813 |\n| Taxa de Devolução | 15,9% |\n\n**Fonte:**\n- Ferramenta: `query_metric` + `run_sql_readonly`\n- Métricas: `returned_revenue`, `delivered_orders`\n- SQL customizado: `SELECT COUNT(DISTINCT order_id) WHERE has_return = true`\n- Base de dados: `marts.fct_orders`\n- Período: Toda a história\n- Linhas retornadas: 1 por consulta\n\n**Caveats:**\n- Dados são sintéticos e não representam uma empresa real\n- A métrica de receita devolvida soma todos os `return_amount_brl` onde `has_return = true`\n- Taxa de devolução calculada como (15.108 / 94.813) = 15,9%",
+      "tool_calls": [
+        {
+          "tool_name": "query_metric",
+          "parameters": {
+            "metric": "returned_revenue",
+            "dimensions": null,
+            "period": null,
+            "filters": null
+          },
+          "sql_executed": "-- Métrica: Receita Devolvida (BRL)\n-- Fonte: marts.fct_orders\n-- Gerado por: query_builder.build_metric_query()\n\nSELECT\n    SUM(CASE WHEN has_return = true THEN return_amount_brl ELSE 0 END) AS returned_revenue\nFROM `projeto-agents-499023.marts.fct_orders`\nLIMIT 500",
+          "row_count": 1,
+          "elapsed_ms": 631
+        },
+        {
+          "tool_name": "query_metric",
+          "parameters": {
+            "metric": "delivered_orders",
+            "dimensions": null,
+            "period": null,
+            "filters": null
+          },
+          "sql_executed": "-- Métrica: Pedidos Entregues\n-- Fonte: marts.fct_orders\n-- Gerado por: query_builder.build_metric_query()\n\nSELECT\n    COUNT(DISTINCT CASE WHEN status = 'entregue' THEN order_id END) AS delivered_orders\nFROM `projeto-agents-499023.marts.fct_orders`\nLIMIT 500",
+          "row_count": 1,
+          "elapsed_ms": 503
+        },
+        {
+          "tool_name": "run_sql_readonly",
+          "parameters": {
+            "reason": "A métrica 'delivered_orders' retorna apenas a contagem total de pedidos entregues, mas preciso do número específico de pedidos que tiveram devolução (has_return = true)."
+          },
+          "sql_executed": "SELECT COUNT(DISTINCT order_id) AS orders_with_return\nFROM `projeto-agents-499023.marts.fct_orders`\nWHERE has_return = true\nLIMIT 1000",
+          "row_count": 1,
+          "elapsed_ms": 796
+        }
+      ],
+      "question": "Qual o valor total devolvido e quantos pedidos tiveram devolução?",
+      "session_id": "eval-V2-E18-1781541342",
+      "total_elapsed_ms": 8164,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [
+        "run_sql_readonly",
+        "query_metric"
+      ],
+      "expected_tools": [
+        "run_sql_readonly",
+        "query_metric"
+      ],
+      "passed_all_structural": true
+    },
+    "judge_scores": {
+      "skipped": "Nenhum critério de judge definido para este caso."
+    },
+    "timestamp": "2026-06-15T16:35:50.881147"
+  }
+]

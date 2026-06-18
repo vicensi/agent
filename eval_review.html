@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "data-agent-report", "runs": [{"id": "eval-audit-parcial-with_skill", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "project_report.md", "type": "text", "content": "# Relat\u00f3rio de Implementa\u00e7\u00e3o \u2014 E-commerce Analytics Agent\n**Data**: 2026-06-15  **Projeto**: agent-create-v2  **Modo**: AUDIT\n\n---\n\n## Executive Summary\n\nO projeto est\u00e1 em est\u00e1gio avan\u00e7ado de implementa\u00e7\u00e3o, com 5 dos 7 layers conclu\u00eddos ou parcialmente implementados. A camada dbt (Data Source, Staging e Marts) est\u00e1 completa e com alta qualidade \u2014 testes robustos, documenta\u00e7\u00e3o detalhada e tratamento correto das armadilhas da fonte. O Semantic Layer (MetricFlow) tamb\u00e9m est\u00e1 implementado com 9 m\u00e9tricas. Inesperadamente para o contexto relatado pelo usu\u00e1rio, o MCP Server, o Agent API e os Evals tamb\u00e9m est\u00e3o implementados e com qualidade satisfat\u00f3ria. O maior gap ativo \u00e9 no Evals: o golden_dataset_v2 tem apenas 2 casos de recusa (m\u00ednimo \u00e9 3) e o runner aponta para a vers\u00e3o v1 por padr\u00e3o. H\u00e1 tamb\u00e9m um arquivo de chave GCP (`projeto-agents-499023-94971d9081c3.json`) presente no diret\u00f3rio raiz \u2014 est\u00e1 no `.gitignore` e n\u00e3o rastreado pelo git, mas representa um risco se o diret\u00f3rio for copiado/enviado.\n\n**Score geral**: 5.5/7 layers completos | **Qualidade**: Alta\n\n---\n\n## Arquitetura Atual\n\n```\nCSV (seeds/seed_ecommerce_sintetico.csv, ~192k linhas) \u2705\n \u2193 dbt seed\nBigQuery: raw (seed_ecommerce_sintetico) \u2705\n \u2193 dbt run\nBigQuery: staging (views \u2014 stg_ecommerce__orders) \u2705\n \u2193\nBigQuery: marts (tables \u2014 fct_orders, dim_customers, dim_customers_kpis, dim_products, agg_daily_revenue) \u2705\n \u2193\nSemantic Layer (MetricFlow \u2014 metrics_customers.yml, 9 m\u00e9tricas) \u2705\n \u2193\nMCP Server (5 tools: list_metrics, query_metric, run_sql_readonly, get_lineage, run_quality_checks) \u2705\n \u2193\nFastAPI Agent (/ask, /query, /metrics, /health) \u2705\n \u2193\nEvals (golden_dataset: 15 casos v1 / 18 casos v2 + runner + judge) \u26a0\ufe0f\n \u2193\nLooker Studio \u274c (roadmap \u2014 SA agent_readonly documentada em setup_gcp.md)\n```\n\n---\n\n## Status por Layer\n\n| Layer | Status | Score | Evid\u00eancia Principal | Gap |\n|---|---|---|---|---|\n| 0 - Data Source | \u2705 Completo | 3/3 | `seeds/seed_ecommerce_sintetico.csv` (192k linhas), `models/raw/sources.yml` com description detalhada | \u2014 |\n| 1 - Staging | \u2705 Completo | 4/4 | `stg_ecommerce__orders.sql` com dedup, SAFE_CAST, ABS, normalize_estado, source() | Sem arquivo yml separado para staging (schema.yml cobre) |\n| 2 - Marts | \u2705 Completo | 5/5 | fct_orders, dim_customers, dim_customers_kpis (contract enforced), dim_products, agg_daily_revenue \u2014 todos com testes e descriptions | dbt contracts s\u00f3 em dim_customers_kpis; fct/dim/agg sem enforced |\n| 2.5 - Semantic Layer | \u2705 Completo | 3/3 | `metrics_customers.yml` com 9 m\u00e9tricas (delivered_revenue, gross_revenue, net_revenue, returned_revenue, delivered_orders, avg_order_value, active_customers_30d, return_rate, returned_orders) + semantic_model com measures expl\u00edcitas | \u2014 |\n| 3 - MCP Server | \u2705 Completo | 5/5 | `server.py` (5 tools), `catalog.py` (8 m\u00e9tricas), `sql_validator.py` (sqlglot, bloqueia DDL/DML), `bq_client.py` (env_var), logging para stderr | \u2014 |\n| 4 - Agent API | \u2705 Completo | 5/5 | `main.py` (POST /ask, /query, GET /metrics, /health), `agent.py` (MAX_ITERATIONS=8, SYSTEM_PROMPT com regras), asyncio.to_thread, ANTHROPIC_API_KEY via environ | \u2014 |\n| 5 - Evals | \u26a0\ufe0f Parcial | 3/5 | `golden_dataset.json` (15 casos, 3 recusas), `golden_dataset_v2.json` (18 casos, 2 recusas), `runner.py`, `judge.py`, `run_evals.py`, 2 runs executados em `results/` | v2 tem apenas 2 casos should_refuse (m\u00ednimo: 3); runner default aponta para v1 |\n\n---\n\n## Avalia\u00e7\u00e3o de Qualidade\n\n### Testes dbt\n\n| Modelo | not_null | unique | relationships | accepted_values | range |\n|---|---|---|---|---|---|\n| stg_ecommerce__orders | \u2705 (order_id, customer_id, created_at, status, total_amount_brl) | \u2705 (order_id) | \u2014 | \u2705 (status 5 valores, quantity > 0, discount 0-100) | \u2705 (quantity, discount_pct, total_amount_brl) |\n| fct_orders | \u2705 (order_id, customer_id, status, total_amount_brl, delivered_revenue_brl, return_amount_brl, net_revenue_brl, created_date) | \u2705 (order_id) | \u2705 (customer_id \u2192 dim_customers, product_name \u2192 dim_products) | \u2705 (status) | \u2705 (total_amount_brl, delivered_revenue_brl, return_amount_brl) |\n| dim_customers | \u2705 (customer_id, lifetime_value_brl, total_orders) | \u2705 (customer_id) | \u274c | \u2014 | \u2705 (lifetime_value_brl) |\n| dim_customers_kpis | \u2705 (customer_id \u2014 via constraint not_null) | \u2705 (customer_id) | \u274c | \u26a0\ufe0f (segment, activity_status impl\u00edcitos via constraint) | \u2014 |\n| dim_products | \u2705 (product_name, category, total_revenue_brl) | \u2705 (product_name) | \u2014 | \u2705 (category not_null) | \u2705 (total_revenue_brl) |\n| agg_daily_revenue | \u2705 (created_date, channel, total/delivered/return/net_revenue_brl) | \u2705 (combina\u00e7\u00e3o date+channel via dbt_utils.unique_combination_of_columns) | \u2014 | \u2014 | \u2705 (todos os monet\u00e1rios) |\n\n**Cobertura**: 6/6 modelos com testes de PK. Testes de FK apenas em fct_orders. Tests customizados: `tests/assert_revenue_non_negative.sql`.\n\n### Documenta\u00e7\u00e3o\n\n| Categoria | Cobertura | Detalhe |\n|---|---|---|\n| Modelos marts | 100% | Todos os 5 marts com description completa incluindo gr\u00e3o e fonte |\n| PKs documentadas | 100% | order_id, customer_id, product_name \u2014 description + testes |\n| FKs documentadas | 50% | customer_id e product_name em fct_orders documentadas; dim_customers sem FK expl\u00edcita |\n| M\u00e9tricas de neg\u00f3cio | 100% | delivered_revenue_brl e net_revenue_brl via doc blocks em `docs/metrics.md` |\n| Doc blocks (metrics.md) | \u2705 | 2 doc blocks: `delivered_revenue_brl`, `net_revenue_brl` com `{{ doc(...) }}` |\n\n### Seguran\u00e7a\n\n| Check | Status | Detalhe |\n|---|---|---|\n| profiles.yml gitignored | \u2705 | `.gitignore` linha: `profiles.yml`; arquivo `dbt_project/profiles.yml` presente mas gitignored |\n| *.json key gitignored | \u2705 | `.gitignore`: `*key.json` e `projeto-agents-*.json`; `git check-ignore` confirma |\n| Arquivo de chave presente no disco | \u26a0\ufe0f Aviso | `projeto-agents-499023-94971d9081c3.json` existe na raiz do projeto \u2014 n\u00e3o rastreado pelo git, mas risco se o diret\u00f3rio for compactado ou copiado |\n| Credenciais hardcoded | \u2705 Nenhuma | `GCP_PROJECT_ID` via `os.environ[\"GCP_PROJECT_ID\"]`; `ANTHROPIC_API_KEY` via `os.environ[\"ANTHROPIC_API_KEY\"]` |\n| env_var() nos profiles | \u2705 | `profiles.yml` usa `env_var(GCP_PROJECT_ID)` e `env_var(GCP_KEYFILE_PATH)` |\n| Logging MCP para stderr | \u2705 | `stream=sys.stderr` em `server.py` \u2014 n\u00e3o polui o protocolo stdio |\n\n### Conven\u00e7\u00f5es de Naming\n\n\u2705 Sem desvios detectados.\n\n- Staging: `stg_ecommerce__orders` \u2705\n- Fatos: `fct_orders` \u2705\n- Dimens\u00f5es: `dim_customers`, `dim_products` \u2705\n- KPI: `dim_customers_kpis` \u2705\n- Agregado: `agg_daily_revenue` \u2705\n- Colunas monet\u00e1rias: `_brl` em todas (total_amount_brl, delivered_revenue_brl, net_revenue_brl, etc.) \u2705\n- Colunas em ingl\u00eas snake_case \u2705\n\n### Observabilidade\n\n| Item | Status | Detalhe |\n|---|---|---|\n| Logging estruturado MCP | \u2705 | JSON formatado para stderr em `server.py`: `{\"time\": ..., \"level\": ..., \"msg\": ...}` |\n| Audit trail das tools | \u2705 | Cada tool loga `tool_called` com par\u00e2metros relevantes antes de executar |\n| Logging Agent API | \u2705 | `agent.py` loga `agent_claude_response`, `tool_execution`, itera\u00e7\u00e3o atual |\n| Rastreabilidade de SQL | \u2705 | Toda resposta de tool inclui o SQL executado no retorno ao agente |\n| Results de evals persistidos | \u2705 | 2 runs completos em `evals/results/` (runner + judged + report) |\n\n---\n\n## Gaps e Riscos\n\n### \ud83d\udd34 Cr\u00edtico (bloqueia produ\u00e7\u00e3o)\n\nNenhum gap cr\u00edtico identificado.\n\n### \ud83d\udfe1 Importante (degrada\u00e7\u00e3o de qualidade)\n\n- **[GAP] golden_dataset_v2 com apenas 2 casos de recusa**: `evals/golden_dataset_v2.json` tem `should_refuse: true` em 2 casos, abaixo do m\u00ednimo de 3 exigido. O `runner.py` usa v1 como default (15 casos, 3 recusas OK), mas se a su\u00edte migrar para v2, a cobertura de recusa cai. Impacto: subcobertura do comportamento de recusa do agente. Esfor\u00e7o: ~1h para adicionar 1 caso de recusa no v2.\n\n- **[GAP] dbt contracts n\u00e3o aplicados em fct_orders, dim_customers, dim_products, agg_daily_revenue**: Apenas `dim_customers_kpis` tem `contract: enforced: true`. Os demais marts n\u00e3o t\u00eam contratos dbt \u2014 o schema pode mudar sem falha expl\u00edcita no `dbt run`. Esfor\u00e7o: ~2h para adicionar data_type e enforced nos 4 modelos restantes.\n\n- **[GAP] FK sem teste `relationships` em dim_customers_kpis**: O modelo tem `customer_id` como FK impl\u00edcita para `dim_customers`, mas n\u00e3o h\u00e1 teste `relationships` declarado. Esfor\u00e7o: 15min.\n\n- **[GAP] Arquivo de chave GCP presente no diret\u00f3rio**: `projeto-agents-499023-94971d9081c3.json` est\u00e1 em `/agent-create-v2/` na raiz. Est\u00e1 corretamente no `.gitignore`, mas o arquivo f\u00edsico existe. Se o diret\u00f3rio for zipado ou transferido, a chave pode vazar. Recomenda\u00e7\u00e3o: mover para `~/.config/gcp/` ou diret\u00f3rio fora do projeto.\n\n### \ud83d\udfe2 Nice to have (melhoria futura)\n\n- **[MELHORIA] Accepted_values expl\u00edcito em dim_customers_kpis para segment e activity_status**: Os valores v\u00e1lidos est\u00e3o documentados no yaml (`champions, loyal, new_customer, promising, at_risk, lost`) mas n\u00e3o h\u00e1 teste `accepted_values` \u2014 s\u00f3 a constraint not_null. Valor: detectar automaticamente segmentos inv\u00e1lidos ap\u00f3s mudan\u00e7a de l\u00f3gica.\n\n- **[MELHORIA] Runner de evals apontar para v2 por padr\u00e3o**: O `runner.py` tem `DATASET = EVALS_DIR / \"golden_dataset.json\"` (v1). Quando v2 for considerado a vers\u00e3o can\u00f4nica, atualizar o default.\n\n- **[MELHORIA] Metricflow time_spine configurada mas sem testes**: `metricflow_time_spine.sql` e `metricflow_time_spine_schema.yml` existem \u2014 adicionar teste `not_null` em `date_day` para garantir integridade da s\u00e9rie temporal.\n\n- **[MELHORIA] claude_desktop_config.json com env vars**: Arquivo presente em `mcp_server/claude_desktop_config.json` \u2014 verificar se os valores de env vars est\u00e3o como placeholders e n\u00e3o hardcoded antes de compartilhar.\n\n---\n\n## Pr\u00f3ximos Passos\n\nOrdenados por impacto \u00d7 esfor\u00e7o:\n\n| Prioridade | A\u00e7\u00e3o | Layer | Esfor\u00e7o | Impacto |\n|---|---|---|---|---|\n| 1 | Adicionar 1 caso `should_refuse: true` no golden_dataset_v2 e atualizar runner default para v2 | 5 - Evals | ~1h | Alto \u2014 garante cobertura can\u00f4nica de recusa |\n| 2 | Mover `projeto-agents-*.json` para fora do diret\u00f3rio do projeto | Seguran\u00e7a | ~15min | Alto \u2014 elimina risco de vazamento da chave |\n| 3 | Adicionar `contract: enforced: true` com `data_type` nos marts fct_orders, dim_customers, dim_products, agg_daily_revenue | 2 - Marts | ~2h | M\u00e9dio \u2014 detecta quebras de schema em deploy |\n| 4 | Adicionar teste `relationships` em dim_customers_kpis \u2192 dim_customers | 2 - Marts | ~15min | Baixo \u2014 cobre FK faltante |\n| 5 | Adicionar `accepted_values` para segment e activity_status em dim_customers_kpis | 2 - Marts | ~30min | Baixo \u2014 cobertura de testes |\n| 6 | Configurar Looker Studio conectado ao dataset marts via SA agent_readonly | Roadmap | ~2h | Alto \u2014 entrega o produto final de BI |\n\n---\n\n## Roadmap Futuro (n\u00e3o implementar sem pedido expl\u00edcito)\n\nConforme documentado no `CLAUDE.md`:\n\n- **PostgreSQL + Airbyte/CDC/Debezium**: substitui\u00e7\u00e3o do seed por ingest\u00e3o real \u2014 os marts n\u00e3o mudam, s\u00f3 o `sources.yml`\n- **Modelos incrementais** em fct_orders: ativar quando a fonte tiver `updated_at` (anotado como coment\u00e1rio em `fct_orders.sql`)\n- **Airflow/Dagster**: orquestra\u00e7\u00e3o dos jobs dbt + reloads incrementais\n- **GitHub Actions**: CI com `dbt parse` + `dbt test` em PRs\n- **Evidently / MLOps**: monitoramento de drift nos dados\n- **Docker Compose**: containeriza\u00e7\u00e3o do MCP Server + Agent API para deploy em Cloud Run\n- **OpenTelemetry**: traces distribu\u00eddos por request na Agent API\n- **OAuth2 + Rate Limiting**: autentica\u00e7\u00e3o e throttling no Agent API para exposi\u00e7\u00e3o externa\n"}], "grading": null}, {"id": "eval-audit-projeto-completo-with_skill", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "project_report.html", "type": "text", "content": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>Relat\u00f3rio de Implementa\u00e7\u00e3o \u2014 Agentic Data Platform</title>\n<style>\n  :root {\n    --bg: #0f1117;\n    --surface: #1a1d27;\n    --surface2: #222535;\n    --border: #2e3148;\n    --text: #e2e8f0;\n    --text-muted: #8892a4;\n    --green: #22c55e;\n    --yellow: #eab308;\n    --red: #ef4444;\n    --blue: #3b82f6;\n    --purple: #a855f7;\n    --orange: #f97316;\n    --accent: #6366f1;\n  }\n  * { box-sizing: border-box; margin: 0; padding: 0; }\n  body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; font-size: 14px; line-height: 1.6; }\n  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }\n  h1 { font-size: 26px; font-weight: 700; color: #fff; margin-bottom: 4px; }\n  h2 { font-size: 18px; font-weight: 600; color: var(--accent); margin: 32px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }\n  h3 { font-size: 14px; font-weight: 600; color: var(--text); margin: 20px 0 8px; }\n  .meta { color: var(--text-muted); font-size: 13px; margin-bottom: 24px; }\n  .summary-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px; margin-bottom: 24px; }\n  .summary-box p { color: var(--text-muted); line-height: 1.7; }\n  .score-badge { display: inline-flex; align-items: center; gap: 8px; background: var(--accent); color: #fff; font-weight: 700; padding: 6px 16px; border-radius: 20px; font-size: 13px; margin-top: 12px; }\n  .quality-badge { display: inline-flex; align-items: center; gap: 8px; background: var(--green); color: #000; font-weight: 700; padding: 6px 16px; border-radius: 20px; font-size: 13px; margin-top: 12px; margin-left: 8px; }\n\n  /* Architecture diagram */\n  .arch { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; font-family: 'Courier New', monospace; font-size: 13px; line-height: 2; }\n  .arch-ok { color: var(--green); }\n  .arch-warn { color: var(--yellow); }\n  .arch-no { color: var(--red); }\n\n  /* Layer cards */\n  .layers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }\n  .layer-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; position: relative; overflow: hidden; }\n  .layer-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; }\n  .layer-card.complete::before { background: var(--green); }\n  .layer-card.partial::before { background: var(--yellow); }\n  .layer-card.absent::before { background: var(--red); }\n  .layer-title { font-weight: 600; font-size: 13px; margin-bottom: 6px; }\n  .layer-status { font-size: 12px; font-weight: 600; margin-bottom: 8px; }\n  .layer-status.complete { color: var(--green); }\n  .layer-status.partial { color: var(--yellow); }\n  .layer-status.absent { color: var(--red); }\n  .layer-evidence { font-size: 11px; color: var(--text-muted); }\n  .layer-gap { font-size: 11px; color: var(--orange); margin-top: 6px; }\n  .score-pills { display: flex; gap: 4px; flex-wrap: wrap; margin: 6px 0; }\n  .pill { font-size: 10px; padding: 2px 8px; border-radius: 12px; font-weight: 600; }\n  .pill-green { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }\n  .pill-yellow { background: rgba(234,179,8,0.15); color: var(--yellow); border: 1px solid rgba(234,179,8,0.3); }\n\n  /* Tables */\n  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }\n  th { background: var(--surface2); color: var(--text-muted); font-weight: 600; text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--border); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }\n  td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }\n  tr:last-child td { border-bottom: none; }\n  tr:hover td { background: rgba(99,102,241,0.04); }\n  .ok { color: var(--green); }\n  .warn { color: var(--yellow); }\n  .fail { color: var(--red); }\n  .na { color: var(--text-muted); }\n\n  /* Gaps */\n  .gap-section { margin: 12px 0; }\n  .gap-item { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin: 8px 0; overflow: hidden; }\n  .gap-header { padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 13px; }\n  .gap-header:hover { background: var(--surface2); }\n  .gap-body { padding: 12px 16px 16px; color: var(--text-muted); font-size: 13px; line-height: 1.7; border-top: 1px solid var(--border); display: none; }\n  .gap-item.open .gap-body { display: block; }\n  .gap-severity { font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 700; }\n  .sev-critical { background: rgba(239,68,68,0.2); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }\n  .sev-important { background: rgba(234,179,8,0.2); color: var(--yellow); border: 1px solid rgba(234,179,8,0.3); }\n  .sev-nice { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }\n\n  /* Evals */\n  .eval-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }\n  .eval-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center; }\n  .eval-value { font-size: 28px; font-weight: 700; color: var(--accent); }\n  .eval-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; }\n  .eval-value.ok { color: var(--green); }\n  .eval-value.warn { color: var(--yellow); }\n\n  /* Next steps */\n  .steps-table tr td:first-child { font-weight: 700; color: var(--accent); width: 40px; }\n\n  /* Filter bar */\n  .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }\n  .filter-btn { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-size: 12px; cursor: pointer; transition: all 0.15s; }\n  .filter-btn:hover, .filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }\n\n  code { background: var(--surface2); padding: 1px 6px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 12px; color: #93c5fd; }\n  hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }\n  .caret { margin-left: auto; transition: transform 0.2s; }\n  .gap-item.open .caret { transform: rotate(180deg); }\n  .tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: rgba(99,102,241,0.15); color: var(--accent); border: 1px solid rgba(99,102,241,0.3); margin-left: 4px; }\n</style>\n</head>\n<body>\n<div class=\"container\">\n\n  <h1>Relat\u00f3rio de Implementa\u00e7\u00e3o</h1>\n  <p class=\"meta\">Projeto: <strong>Agentic Data Platform \u2014 E-Commerce</strong> &nbsp;|&nbsp; Data: 2026-06-15 &nbsp;|&nbsp; Stack: dbt Core + BigQuery + MCP Server + FastAPI Agent</p>\n\n  <div class=\"summary-box\">\n    <p>O projeto est\u00e1 em estado altamente avan\u00e7ado: 6 dos 7 layers can\u00f4nicos est\u00e3o completos com qualidade acima da m\u00e9dia em testes, documenta\u00e7\u00e3o e seguran\u00e7a. O \u00fanico layer parcial \u00e9 o Semantic Layer (MetricFlow), substitu\u00eddo por cat\u00e1logo manual em <code>catalog.py</code> \u2014 escolha arquitetural v\u00e1lida e documentada. O maior risco identificado \u00e9 a presen\u00e7a f\u00edsica do arquivo de chave JSON (<code>projeto-agents-499023-94971d9081c3.json</code>) na raiz do projeto, mesmo gitignored.</p>\n    <div>\n      <span class=\"score-badge\">Score: 6/7 layers completos</span>\n      <span class=\"quality-badge\">Qualidade: Alta</span>\n    </div>\n  </div>\n\n  <!-- ARCHITECTURE -->\n  <h2>Arquitetura Atual</h2>\n  <div class=\"arch\">\n    <span class=\"arch-ok\">\u2705</span> CSV (seeds/seed_ecommerce_sintetico.csv ~192k linhas)<br>\n    &nbsp;&nbsp;&nbsp;\u2193 dbt seed<br>\n    <span class=\"arch-ok\">\u2705</span> BigQuery: <strong>raw</strong> (espelho fiel)<br>\n    &nbsp;&nbsp;&nbsp;\u2193 dbt run<br>\n    <span class=\"arch-ok\">\u2705</span> BigQuery: <strong>staging</strong> (views \u2014 dedup, cast, rename, sanidade)<br>\n    &nbsp;&nbsp;&nbsp;\u2193<br>\n    <span class=\"arch-ok\">\u2705</span> BigQuery: <strong>marts</strong> (tables \u2014 joins, m\u00e9tricas de neg\u00f3cio)<br>\n    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\u251c\u2500\u2500 fct_orders &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (1 por order_id)<br>\n    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\u251c\u2500\u2500 dim_customers &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (1 por customer_id)<br>\n    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\u251c\u2500\u2500 dim_customers_kpis &nbsp;(1 por customer_id, contract enforced)<br>\n    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\u251c\u2500\u2500 dim_products &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (1 por product_name)<br>\n    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\u2514\u2500\u2500 agg_daily_revenue &nbsp; (1 por date \u00d7 channel)<br>\n    &nbsp;&nbsp;&nbsp;\u2193<br>\n    <span class=\"arch-warn\">\u26a0\ufe0f</span> Semantic Layer \u2014 metrics_customers.yml (8 m\u00e9tricas, sem sync com catalog.py)<br>\n    &nbsp;&nbsp;&nbsp;\u2193<br>\n    <span class=\"arch-ok\">\u2705</span> MCP Server (5 tools: list_metrics, query_metric, run_sql_readonly, get_lineage, run_quality_checks)<br>\n    &nbsp;&nbsp;&nbsp;\u2193<br>\n    <span class=\"arch-ok\">\u2705</span> FastAPI Agent (/ask /query /metrics /health) \u2014 MAX_ITERATIONS=8<br>\n    &nbsp;&nbsp;&nbsp;\u2193<br>\n    <span class=\"arch-ok\">\u2705</span> Evals (18 casos, 2 runs executados, LLM-as-judge funcional)<br>\n    &nbsp;&nbsp;&nbsp;\u2193<br>\n    <span class=\"arch-no\">\u274c</span> Looker Studio (documentado como roadmap)\n  </div>\n\n  <!-- LAYER STATUS -->\n  <h2>Status por Layer</h2>\n  <div class=\"filter-bar\">\n    <button class=\"filter-btn active\" onclick=\"filterLayers('all', this)\">Todos</button>\n    <button class=\"filter-btn\" onclick=\"filterLayers('complete', this)\">\u2705 Completo</button>\n    <button class=\"filter-btn\" onclick=\"filterLayers('partial', this)\">\u26a0\ufe0f Parcial</button>\n    <button class=\"filter-btn\" onclick=\"filterLayers('absent', this)\">\u274c Ausente</button>\n  </div>\n  <div class=\"layers-grid\" id=\"layers-grid\">\n\n    <div class=\"layer-card complete\" data-status=\"complete\">\n      <div class=\"layer-title\">Layer 0 \u2014 Data Source</div>\n      <div class=\"layer-status complete\">\u2705 Completo</div>\n      <div class=\"score-pills\"><span class=\"pill pill-green\">3/3 crit\u00e9rios</span></div>\n      <div class=\"layer-evidence\"><code>seeds/seed_ecommerce_sintetico.csv</code> (~192k linhas)<br><code>models/raw/sources.yml</code> com description completa</div>\n      <div class=\"layer-gap\">\u26a0 Gap: Sem testes de fonte (not_null/accepted_values em sources.yml)</div>\n    </div>\n\n    <div class=\"layer-card complete\" data-status=\"complete\">\n      <div class=\"layer-title\">Layer 1 \u2014 Staging</div>\n      <div class=\"layer-status complete\">\u2705 Completo</div>\n      <div class=\"score-pills\"><span class=\"pill pill-green\">4/4 crit\u00e9rios</span></div>\n      <div class=\"layer-evidence\"><code>stg_ecommerce__orders.sql</code> \u2014 dedup, SAFE_CAST, normalize_estado, ABS(quantidade), desconto &gt;100 \u2192 NULL<br>Usa <code>source()</code>; materializa\u00e7\u00e3o view confirmada</div>\n    </div>\n\n    <div class=\"layer-card complete\" data-status=\"complete\">\n      <div class=\"layer-title\">Layer 2 \u2014 Marts</div>\n      <div class=\"layer-status complete\">\u2705 Completo</div>\n      <div class=\"score-pills\"><span class=\"pill pill-green\">5/5 crit\u00e9rios</span></div>\n      <div class=\"layer-evidence\">5 marts implementados: fct, dim \u00d72, dim_kpis, agg<br>Testes: PK, FK, accepted_values, dbt_utils.accepted_range<br>dbt contract enforced em dim_customers_kpis<br>Segmenta\u00e7\u00e3o RFM com percentis auto-ajust\u00e1veis</div>\n      <div class=\"layer-gap\">\u26a0 Gap: Contract n\u00e3o implementado em fct_orders, dim_customers, agg_daily_revenue</div>\n    </div>\n\n    <div class=\"layer-card partial\" data-status=\"partial\">\n      <div class=\"layer-title\">Layer 2.5 \u2014 Semantic Layer</div>\n      <div class=\"layer-status partial\">\u26a0\ufe0f Parcial</div>\n      <div class=\"score-pills\"><span class=\"pill pill-green\">2/3 crit\u00e9rios</span><span class=\"pill pill-yellow\">1 faltando</span></div>\n      <div class=\"layer-evidence\"><code>metrics_customers.yml</code> com 8 m\u00e9tricas, semantic_model, dimens\u00f5es de tempo<br>Cat\u00e1logo duplicado em <code>catalog.py</code> (sem sync autom\u00e1tico)</div>\n      <div class=\"layer-gap\">\u26a0 Gap: Sem semantic_model para dim_products / agg_daily_revenue; cat\u00e1logo dual n\u00e3o sincronizado</div>\n    </div>\n\n    <div class=\"layer-card complete\" data-status=\"complete\">\n      <div class=\"layer-title\">Layer 3 \u2014 MCP Server</div>\n      <div class=\"layer-status complete\">\u2705 Completo</div>\n      <div class=\"score-pills\"><span class=\"pill pill-green\">5/5 crit\u00e9rios</span></div>\n      <div class=\"layer-evidence\">5 tools em <code>server.py</code>; 8 m\u00e9tricas em <code>catalog.py</code><br>sql_validator via AST (sqlglot) \u2014 bloqueia DDL/DML, permite s\u00f3 schema marts<br>Logging para stderr (protocolo MCP correto)<br>Credenciais via env_var; <code>claude_desktop_config.json</code> presente</div>\n    </div>\n\n    <div class=\"layer-card complete\" data-status=\"complete\">\n      <div class=\"layer-title\">Layer 4 \u2014 Agent API</div>\n      <div class=\"layer-status complete\">\u2705 Completo</div>\n      <div class=\"score-pills\"><span class=\"pill pill-green\">5/5 crit\u00e9rios</span></div>\n      <div class=\"layer-evidence\">FastAPI com /ask, /query, /metrics, /health<br>MAX_ITERATIONS=8; system prompt com regras de cita\u00e7\u00e3o e recusa<br>asyncio.to_thread; Pydantic models completos<br>ANTHROPIC_API_KEY via os.environ</div>\n      <div class=\"layer-gap\">\u26a0 Gap: CORS allow_origins=[\"*\"] \u2014 inseguro para produ\u00e7\u00e3o</div>\n    </div>\n\n    <div class=\"layer-card complete\" data-status=\"complete\">\n      <div class=\"layer-title\">Layer 5 \u2014 Evals</div>\n      <div class=\"layer-status complete\">\u2705 Completo</div>\n      <div class=\"score-pills\"><span class=\"pill pill-green\">5/5 crit\u00e9rios</span></div>\n      <div class=\"layer-evidence\">18 casos em <code>golden_dataset_v2.json</code> (inclui 3 refusal)<br>Categorias: metric_simple, metric_with_dimension, sql_custom, catalog_first, lineage, refusal_out_of_scope<br>runner.py com scores estruturais; judge.py LLM-as-judge<br>2 runs executados em <code>evals/results/</code></div>\n      <div class=\"layer-gap\">\u26a0 Gap: Judge n\u00e3o rodou no 2\u00ba run (0 casos julgados \u2014 faltou --dataset v2)</div>\n    </div>\n\n  </div>\n\n  <!-- QUALITY -->\n  <h2>Avalia\u00e7\u00e3o de Qualidade</h2>\n\n  <h3>Testes dbt</h3>\n  <table>\n    <tr><th>Modelo</th><th>not_null</th><th>unique</th><th>relationships</th><th>accepted_values</th><th>range</th></tr>\n    <tr>\n      <td><code>stg_ecommerce__orders</code></td>\n      <td class=\"ok\">\u2705</td><td class=\"ok\">\u2705</td><td class=\"na\">\u2014</td>\n      <td class=\"ok\">\u2705 (status)</td><td class=\"ok\">\u2705 (qty, discount, total)</td>\n    </tr>\n    <tr>\n      <td><code>fct_orders</code></td>\n      <td class=\"ok\">\u2705</td><td class=\"ok\">\u2705</td>\n      <td class=\"ok\">\u2705 (customers, products)</td>\n      <td class=\"ok\">\u2705 (status)</td><td class=\"ok\">\u2705 (3 colunas BRL)</td>\n    </tr>\n    <tr>\n      <td><code>dim_customers</code></td>\n      <td class=\"ok\">\u2705</td><td class=\"ok\">\u2705</td><td class=\"na\">\u2014</td><td class=\"na\">\u2014</td><td class=\"ok\">\u2705 (LTV)</td>\n    </tr>\n    <tr>\n      <td><code>dim_customers_kpis</code> <span class=\"tag\">contract</span></td>\n      <td class=\"ok\">\u2705 (11 cols)</td><td class=\"ok\">\u2705</td><td class=\"na\">\u2014</td>\n      <td class=\"ok\">\u2705 (activity_status, RFM scores, segment)</td><td class=\"ok\">\u2705 (m\u00faltiplas)</td>\n    </tr>\n    <tr>\n      <td><code>dim_products</code></td>\n      <td class=\"ok\">\u2705</td><td class=\"ok\">\u2705</td><td class=\"na\">\u2014</td><td class=\"na\">\u2014</td><td class=\"ok\">\u2705 (revenue)</td>\n    </tr>\n    <tr>\n      <td><code>agg_daily_revenue</code></td>\n      <td class=\"ok\">\u2705 (6 cols)</td>\n      <td class=\"ok\">\u2705 (unique_combination)</td>\n      <td class=\"na\">\u2014</td><td class=\"na\">\u2014</td><td class=\"ok\">\u2705 (4 BRL cols)</td>\n    </tr>\n  </table>\n\n  <h3>Seguran\u00e7a</h3>\n  <table>\n    <tr><th>Check</th><th>Status</th><th>Detalhe</th></tr>\n    <tr><td>profiles.yml gitignored</td><td class=\"ok\">\u2705</td><td>Linha <code>dbt_project/profiles.yml</code> em .gitignore</td></tr>\n    <tr><td>*.json key gitignored</td><td class=\"warn\">\u26a0\ufe0f</td><td>Padr\u00e3o <code>projeto-agents-*.json</code> em .gitignore; arquivo f\u00edsico presente na raiz</td></tr>\n    <tr><td>Credenciais hardcoded</td><td class=\"ok\">\u2705 Nenhuma</td><td>Todos os .py usam os.environ[\"...\"] ou env_var()</td></tr>\n    <tr><td>.env no .gitignore</td><td class=\"ok\">\u2705</td><td>Primeira linha do .gitignore</td></tr>\n    <tr><td>secrets/ no .gitignore</td><td class=\"ok\">\u2705</td><td>Linha secrets/ presente</td></tr>\n    <tr><td>ANTHROPIC_API_KEY</td><td class=\"ok\">\u2705</td><td>Via os.environ em agent.py e judge.py</td></tr>\n    <tr><td>Logging para stderr (MCP)</td><td class=\"ok\">\u2705</td><td>stream=sys.stderr em server.py</td></tr>\n    <tr><td>CORS restrito</td><td class=\"warn\">\u26a0\ufe0f</td><td>allow_origins=[\"*\"] em main.py \u2014 inseguro para produ\u00e7\u00e3o</td></tr>\n  </table>\n\n  <h3>Conven\u00e7\u00f5es de Naming</h3>\n  <p style=\"color: var(--green); margin: 8px 0;\">\u2705 Sem desvios detectados. Todos os modelos, colunas e m\u00e9tricas seguem as conven\u00e7\u00f5es obrigat\u00f3rias (stg_/fct_/dim_/agg_, snake_case, sufixo _brl).</p>\n\n  <!-- EVALS -->\n  <h2>Resultados dos Evals</h2>\n  <p style=\"color: var(--text-muted); margin-bottom: 12px; font-size: 13px;\">Run mais recente: <code>run_20260615_163550</code> \u2014 18 casos, golden_dataset_v2.json</p>\n  <div class=\"eval-grid\">\n    <div class=\"eval-card\"><div class=\"eval-value ok\">89%</div><div class=\"eval-label\">Pass rate geral (estrutural)</div></div>\n    <div class=\"eval-card\"><div class=\"eval-value ok\">100%</div><div class=\"eval-label\">Citation rate</div></div>\n    <div class=\"eval-card\"><div class=\"eval-value ok\">100%</div><div class=\"eval-label\">Refusal accuracy</div></div>\n    <div class=\"eval-card\"><div class=\"eval-value warn\">16.4s</div><div class=\"eval-label\">Lat\u00eancia m\u00e9dia</div></div>\n  </div>\n  <table style=\"margin-top:12px\">\n    <tr><th>Categoria</th><th>Resultado</th><th>Notas</th></tr>\n    <tr><td>metric_simple</td><td class=\"ok\">2/2</td><td>\u2014</td></tr>\n    <tr><td>metric_with_dimension</td><td class=\"warn\">5/6</td><td>E06 falhou \u2014 product_category n\u00e3o \u00e9 dimens\u00e3o dispon\u00edvel no cat\u00e1logo</td></tr>\n    <tr><td>sql_custom</td><td class=\"warn\">4/5</td><td>E09 falhou \u2014 agente usou query_metric em vez de run_sql_readonly</td></tr>\n    <tr><td>catalog_first</td><td class=\"ok\">1/1</td><td>\u2014</td></tr>\n    <tr><td>lineage</td><td class=\"ok\">1/1</td><td>\u2014</td></tr>\n    <tr><td>metric_comparison</td><td class=\"ok\">1/1</td><td>\u2014</td></tr>\n    <tr><td>refusal_out_of_scope</td><td class=\"ok\">2/2</td><td>Previs\u00e3o futura e RH recusados corretamente</td></tr>\n  </table>\n\n  <!-- GAPS -->\n  <h2>Gaps e Riscos</h2>\n\n  <h3 style=\"color: var(--red); margin-top: 0;\">Riscos Cr\u00edticos</h3>\n  <div class=\"gap-section\">\n\n    <div class=\"gap-item\" onclick=\"toggleGap(this)\">\n      <div class=\"gap-header\">\n        <span class=\"gap-severity sev-critical\">CR\u00cdTICO</span>\n        Arquivo de chave JSON presente no disco\n        <svg class=\"caret\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><polyline points=\"6 9 12 15 18 9\"/></svg>\n      </div>\n      <div class=\"gap-body\">\n        <strong>Arquivo afetado:</strong> <code>projeto-agents-499023-94971d9081c3.json</code> na raiz do projeto.<br><br>\n        Mesmo gitignored pelo padr\u00e3o <code>projeto-agents-*.json</code>, o arquivo existe fisicamente no disco. Riscos: commit acidental via <code>git add .</code>, exposi\u00e7\u00e3o em backups, acesso por scripts autom\u00e1ticos.<br><br>\n        <strong>Recomenda\u00e7\u00e3o:</strong> Remover o arquivo imediatamente. Para desenvolvimento, usar <code>gcloud auth application-default login</code> (ADC). Para produ\u00e7\u00e3o, migrar para Workload Identity Federation (sem arquivo JSON no disco).\n      </div>\n    </div>\n\n    <div class=\"gap-item\" onclick=\"toggleGap(this)\">\n      <div class=\"gap-header\">\n        <span class=\"gap-severity sev-critical\">CR\u00cdTICO</span>\n        CORS aberto em produ\u00e7\u00e3o\n        <svg class=\"caret\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><polyline points=\"6 9 12 15 18 9\"/></svg>\n      </div>\n      <div class=\"gap-body\">\n        <strong>Arquivo afetado:</strong> <code>agent_api/main.py</code> \u2014 <code>allow_origins=[\"*\"]</code>.<br><br>\n        Qualquer origem pode chamar a API, incluindo sites maliciosos via CSRF.<br><br>\n        <strong>Recomenda\u00e7\u00e3o:</strong> Restringir para os dom\u00ednios espec\u00edficos dos BI tools (Metabase, Power BI, etc.) antes de qualquer deploy em ambiente compartilhado.\n      </div>\n    </div>\n\n  </div>\n\n  <h3 style=\"color: var(--yellow);\">Gaps Importantes</h3>\n  <div class=\"gap-section\">\n\n    <div class=\"gap-item\" onclick=\"toggleGap(this)\">\n      <div class=\"gap-header\">\n        <span class=\"gap-severity sev-important\">IMPORTANTE</span>\n        Dimens\u00e3o product_category n\u00e3o mapeada no cat\u00e1logo \u2014 causa falha em V2-E06\n        <svg class=\"caret\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><polyline points=\"6 9 12 15 18 9\"/></svg>\n      </div>\n      <div class=\"gap-body\">\n        A pergunta \"receita por categoria de produto\" falha porque <code>delivered_revenue</code> no cat\u00e1logo lista <code>available_dimensions: [\"created_date\", \"channel\", \"status\", \"customer_state\"]</code> \u2014 sem <code>product_category</code>. A coluna n\u00e3o existe em <code>fct_orders</code> (existe <code>product_name</code>).<br><br>\n        <strong>Solu\u00e7\u00e3o A:</strong> Adicionar join com dim_products no query_builder quando dimension = product_category.<br>\n        <strong>Solu\u00e7\u00e3o B:</strong> Criar <code>agg_revenue_by_product_category.sql</code> como mart dedicado e adicionar ao cat\u00e1logo.<br>\n        <strong>Workaround imediato:</strong> Adicionar product_category ao system prompt como dimens\u00e3o dispon\u00edvel via run_sql_readonly.\n      </div>\n    </div>\n\n    <div class=\"gap-item\" onclick=\"toggleGap(this)\">\n      <div class=\"gap-header\">\n        <span class=\"gap-severity sev-important\">IMPORTANTE</span>\n        Cat\u00e1logo dual (MetricFlow + catalog.py) sem sincroniza\u00e7\u00e3o autom\u00e1tica\n        <svg class=\"caret\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><polyline points=\"6 9 12 15 18 9\"/></svg>\n      </div>\n      <div class=\"gap-body\">\n        <code>metrics_customers.yml</code> e <code>catalog.py</code> definem as mesmas 8 m\u00e9tricas em formatos diferentes. Uma mudan\u00e7a em um n\u00e3o reflete no outro.<br><br>\n        <strong>Recomenda\u00e7\u00e3o:</strong> Gerar <code>catalog.py</code> automaticamente a partir do <code>dbt_project/target/manifest.json</code> (artefato de <code>dbt docs generate</code>). O CLAUDE.md j\u00e1 documenta isso como melhoramento de produ\u00e7\u00e3o.\n      </div>\n    </div>\n\n    <div class=\"gap-item\" onclick=\"toggleGap(this)\">\n      <div class=\"gap-header\">\n        <span class=\"gap-severity sev-important\">IMPORTANTE</span>\n        Judge n\u00e3o executou no 2\u00ba run de evals (qualidade qualitativa desconhecida)\n        <svg class=\"caret\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><polyline points=\"6 9 12 15 18 9\"/></svg>\n      </div>\n      <div class=\"gap-body\">\n        <code>run_20260615_163550_judged.json</code> mostra 0 casos julgados (qualidade m\u00e9dia = 0.0/5). O runner rodou mas o judge n\u00e3o foi executado corretamente \u2014 provavelmente faltou <code>--dataset golden_dataset_v2.json</code>.<br><br>\n        <strong>A\u00e7\u00e3o imediata:</strong><br>\n        <code>python judge.py --input evals/results/run_20260615_163550.json --dataset evals/golden_dataset_v2.json</code>\n      </div>\n    </div>\n\n    <div class=\"gap-item\" onclick=\"toggleGap(this)\">\n      <div class=\"gap-header\">\n        <span class=\"gap-severity sev-important\">IMPORTANTE</span>\n        Testes de fonte ausentes em sources.yml\n        <svg class=\"caret\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><polyline points=\"6 9 12 15 18 9\"/></svg>\n      </div>\n      <div class=\"gap-body\">\n        <code>models/raw/sources.yml</code> define a fonte mas sem testes. Sem eles, problemas na fonte crua s\u00f3 s\u00e3o detectados quando j\u00e1 propagaram at\u00e9 os marts.<br><br>\n        <strong>Adicionar em sources.yml:</strong> <code>not_null</code> + <code>unique</code> em order_id, <code>accepted_values</code> em status para detec\u00e7\u00e3o precoce.\n      </div>\n    </div>\n\n  </div>\n\n  <h3 style=\"color: var(--green);\">Melhorias Futuras</h3>\n  <div class=\"gap-section\">\n    <div class=\"gap-item\" onclick=\"toggleGap(this)\">\n      <div class=\"gap-header\">\n        <span class=\"gap-severity sev-nice\">NICE TO HAVE</span>\n        dbt contracts nos demais marts\n        <svg class=\"caret\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><polyline points=\"6 9 12 15 18 9\"/></svg>\n      </div>\n      <div class=\"gap-body\">Apenas <code>dim_customers_kpis</code> tem <code>contract: enforced: true</code>. Adicionar em <code>fct_orders</code> e <code>agg_daily_revenue</code> garantiria schema est\u00e1vel para Looker Studio.</div>\n    </div>\n    <div class=\"gap-item\" onclick=\"toggleGap(this)\">\n      <div class=\"gap-header\">\n        <span class=\"gap-severity sev-nice\">NICE TO HAVE</span>\n        Cache de respostas repetidas no /ask\n        <svg class=\"caret\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><polyline points=\"6 9 12 15 18 9\"/></svg>\n      </div>\n      <div class=\"gap-body\">Perguntas id\u00eanticas chamam o agente do zero (lat\u00eancia ~16s, custo de API). Um cache por hash de pergunta reduziria lat\u00eancia e custo em dashboards com queries recorrentes.</div>\n    </div>\n  </div>\n\n  <!-- NEXT STEPS -->\n  <h2>Pr\u00f3ximos Passos</h2>\n  <table class=\"steps-table\">\n    <tr><th>#</th><th>A\u00e7\u00e3o</th><th>Layer</th><th>Esfor\u00e7o</th><th>Impacto</th></tr>\n    <tr>\n      <td>1</td>\n      <td>Remover <code>projeto-agents-*.json</code> do disco; configurar ADC para dev e Workload Identity para prod</td>\n      <td>Seguran\u00e7a</td><td>~1h</td><td class=\"fail\">Alto (cr\u00edtico)</td>\n    </tr>\n    <tr>\n      <td>2</td>\n      <td>Rodar judge.py no run mais recente: <code>python judge.py --input ... --dataset golden_dataset_v2.json</code></td>\n      <td>Layer 5</td><td>~30min</td><td class=\"ok\">Alto</td>\n    </tr>\n    <tr>\n      <td>3</td>\n      <td>Adicionar product_category ao cat\u00e1logo (via join no query_builder ou novo mart agg_by_category)</td>\n      <td>Layer 3</td><td>~3h</td><td class=\"ok\">Alto</td>\n    </tr>\n    <tr>\n      <td>4</td>\n      <td>Adicionar testes not_null e accepted_values em sources.yml</td>\n      <td>Layer 0</td><td>~1h</td><td class=\"warn\">M\u00e9dio</td>\n    </tr>\n    <tr>\n      <td>5</td>\n      <td>Implementar dbt contracts em fct_orders e agg_daily_revenue</td>\n      <td>Layer 2</td><td>~2h</td><td class=\"warn\">M\u00e9dio</td>\n    </tr>\n    <tr>\n      <td>6</td>\n      <td>Restringir CORS em main.py para dom\u00ednios espec\u00edficos</td>\n      <td>Layer 4</td><td>~30min</td><td class=\"warn\">M\u00e9dio</td>\n    </tr>\n    <tr>\n      <td>7</td>\n      <td>Gerar catalog.py automaticamente a partir de dbt manifest.json (eliminar cat\u00e1logo dual)</td>\n      <td>Layer 3</td><td>~1d</td><td class=\"warn\">M\u00e9dio</td>\n    </tr>\n  </table>\n\n  <!-- ROADMAP -->\n  <h2>Roadmap Futuro (n\u00e3o implementar sem pedido expl\u00edcito)</h2>\n  <table>\n    <tr><th>Item</th><th>Descri\u00e7\u00e3o</th></tr>\n    <tr><td>PostgreSQL + CDC</td><td>Substituir seeds por Airbyte/Debezium para ingest\u00e3o em tempo real</td></tr>\n    <tr><td>Docker Compose</td><td>Orquestra\u00e7\u00e3o completa da stack local</td></tr>\n    <tr><td>Airflow/Dagster</td><td>Scheduling de pipelines dbt</td></tr>\n    <tr><td>Modelos incrementais</td><td>fct_orders incremental por created_date (reduz custo de refresh)</td></tr>\n    <tr><td>GitHub Actions CI/CD</td><td>dbt test autom\u00e1tico em pull requests</td></tr>\n    <tr><td>Looker Studio</td><td>Dashboard conectado ao SA agent_readonly nos marts</td></tr>\n    <tr><td>MLOps</td><td>Modelos preditivos: churn score, previs\u00e3o de LTV, detec\u00e7\u00e3o de fraude</td></tr>\n  </table>\n\n  <hr>\n  <p style=\"color: var(--text-muted); font-size: 12px; text-align: center; margin-top: 16px;\">\n    Gerado por data-agent-report skill &nbsp;|&nbsp; 2026-06-15 &nbsp;|&nbsp; Modo: AUDIT\n  </p>\n</div>\n\n<script>\nfunction filterLayers(status, btn) {\n  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));\n  btn.classList.add('active');\n  document.querySelectorAll('.layer-card').forEach(card => {\n    if (status === 'all' || card.dataset.status === status) {\n      card.style.display = '';\n    } else {\n      card.style.display = 'none';\n    }\n  });\n}\n\nfunction toggleGap(el) {\n  el.classList.toggle('open');\n}\n</script>\n</body>\n</html>\n"}, {"name": "project_report.md", "type": "text", "content": "# Relat\u00f3rio de Implementa\u00e7\u00e3o \u2014 Agentic Data Platform (E-Commerce)\n**Data**: 2026-06-15  **Vers\u00e3o**: HEAD (branch principal, 1 commit)\n\n---\n\n## Executive Summary\n\nO projeto est\u00e1 em estado altamente avan\u00e7ado de implementa\u00e7\u00e3o: 6 dos 7 layers can\u00f4nicos est\u00e3o completos, com qualidade acima da m\u00e9dia em testes, documenta\u00e7\u00e3o e seguran\u00e7a. O \u00fanico layer ausente \u00e9 o Semantic Layer formal (MetricFlow/metrics_*.yml substitu\u00eddo pelo cat\u00e1logo manual em `catalog.py`, o que \u00e9 uma escolha arquitetural v\u00e1lida e documentada). O maior gap identificado \u00e9 operacional: o `.env` com `GCP_KEYFILE_PATH` existe no reposit\u00f3rio mas est\u00e1 no `.gitignore`, e o arquivo de chave JSON (`projeto-agents-499023-94971d9081c3.json`) est\u00e1 fisicamente presente na raiz do projeto \u2014 mesmo gitignored, sua presen\u00e7a no disco representa risco de vazamento acidental. A recomenda\u00e7\u00e3o principal \u00e9 remover o arquivo de chave JSON do disco e migrar para Workload Identity ou Secret Manager em produ\u00e7\u00e3o.\n\n**Score geral**: 6/7 layers completos | **Qualidade**: Alta\n\n---\n\n## Arquitetura Atual\n\n```\nCSV (seeds/seed_ecommerce_sintetico.csv ~192k linhas) \u2705\n \u2193 dbt seed\nBigQuery: raw \u2705\n \u2193 dbt run\nBigQuery: staging (views \u2014 dedup, cast, rename, sanidade) \u2705\n \u2193\nBigQuery: marts (tables \u2014 joins, m\u00e9tricas de neg\u00f3cio) \u2705\n  \u251c\u2500\u2500 fct_orders         (gr\u00e3o: 1 por order_id)\n  \u251c\u2500\u2500 dim_customers      (gr\u00e3o: 1 por customer_id)\n  \u251c\u2500\u2500 dim_customers_kpis (gr\u00e3o: 1 por customer_id, dbt contract enforced)\n  \u251c\u2500\u2500 dim_products       (gr\u00e3o: 1 por product_name)\n  \u2514\u2500\u2500 agg_daily_revenue  (gr\u00e3o: 1 por date x channel)\n \u2193\nLayer 2.5 \u2014 Semantic Layer (MetricFlow) \u26a0\ufe0f\n  metrics_customers.yml presente com 8 m\u00e9tricas e semantic_models\n  [cat\u00e1logo duplicado em catalog.py \u2014 abordagem h\u00edbrida]\n \u2193\nMCP Server (5 tools) \u2705\n  list_metrics | query_metric | run_sql_readonly | get_lineage | run_quality_checks\n \u2193\nFastAPI Agent (/ask /query /metrics /health) \u2705\n \u2193\nEvals (18 casos, 2 runs executados, judge.py funcional) \u2705\n \u2193\nLooker Studio \u274c (documentado como roadmap \u2014 SA agent_readonly configurado no setup_gcp.md)\n```\n\n---\n\n## Status por Layer\n\n| Layer | Status | Score | Evid\u00eancia | Gap |\n|---|---|---|---|---|\n| 0 - Data Source | \u2705 Completo | 3/3 | `seeds/seed_ecommerce_sintetico.csv` (~192k linhas); `models/raw/sources.yml` com description da fonte | Sem testes de fonte em sources.yml (not_null/unique nas PKs da fonte crua) |\n| 1 - Staging | \u2705 Completo | 4/4 | `stg_ecommerce__orders.sql`; `schema.yml` com dedup, SAFE_CAST, normalize_estado; materializa\u00e7\u00e3o view; usa `source()` | \u00danico modelo de staging (monol\u00edtico) \u2014 aceit\u00e1vel dado que a fonte \u00e9 denormalizada |\n| 2 - Marts | \u2705 Completo | 5/5 | `fct_orders`, `dim_customers`, `dim_customers_kpis`, `dim_products`, `agg_daily_revenue`; testes completos; dbt contract em dim_customers_kpis | Falta dbt contract nos demais marts (fct_orders, dim_customers, agg_daily_revenue) |\n| 2.5 - Semantic Layer | \u26a0\ufe0f Parcial | 2/3 | `metrics_customers.yml` com 8 m\u00e9tricas e semantic_model completo; dimens\u00f5es de tempo definidas | Semantic model n\u00e3o cobre dim_products nem agg_daily_revenue; cat\u00e1logo duplicado em catalog.py (n\u00e3o sincronizado automaticamente) |\n| 3 - MCP Server | \u2705 Completo | 5/5 | `server.py` com 5 tools; `catalog.py` com 8 m\u00e9tricas; `sql_validator.py` bloqueando DDL/DML via AST; logging para stderr; credenciais via env_var | claude_desktop_config.json presente; query_builder e bq_client completos |\n| 4 - Agent API | \u2705 Completo | 5/5 | `main.py` com /ask, /query, /metrics, /health; MAX_ITERATIONS=8; system prompt com regras de recusa e cita\u00e7\u00e3o; asyncio.to_thread; Pydantic models | CORS `allow_origins=[\"*\"]` \u2014 adequado para dev, inseguro para produ\u00e7\u00e3o |\n| 5 - Evals | \u2705 Completo | 5/5 | `golden_dataset_v2.json` com 18 casos (3 de recusa); `runner.py` com scores estruturais; `judge.py` LLM-as-judge; 2 runs executados em `results/` | Judge n\u00e3o rodou no 2\u00ba run (0 casos julgados) \u2014 provavelmente faltou passar --dataset v2 |\n\n---\n\n## Avalia\u00e7\u00e3o de Qualidade\n\n### Testes dbt\n\n| Modelo | not_null | unique | relationships | accepted_values | range |\n|---|---|---|---|---|---|\n| stg_ecommerce__orders | \u2705 (order_id, customer_id, created_at, status, total_amount_brl) | \u2705 (order_id) | \u2014 | \u2705 (status, 5 valores) | \u2705 (quantity, discount_pct, total_amount_brl) |\n| fct_orders | \u2705 | \u2705 | \u2705 (dim_customers, dim_products) | \u2705 (status) | \u2705 (total_amount_brl, delivered_revenue_brl, return_amount_brl) |\n| dim_customers | \u2705 (customer_id) | \u2705 | \u2014 | \u2014 | \u2705 (lifetime_value_brl) |\n| dim_customers_kpis | \u2705 (11 colunas) | \u2705 | \u2014 | \u2705 (activity_status, r/f/m_score, segment) | \u2705 (days_since_last_order, total_orders, etc.) |\n| dim_products | \u2705 | \u2705 | \u2014 | \u2014 | \u2705 (total_revenue_brl) |\n| agg_daily_revenue | \u2705 (6 colunas) | \u2705 (unique_combination created_date+channel) | \u2014 | \u2014 | \u2705 (4 colunas monet\u00e1rias) |\n\n**Cobertura**: 6/6 modelos com testes de PK. Testes de FK presentes em fct_orders. Testes singulares adicionais em `tests/assert_revenue_non_negative.sql`.\n\n### Documenta\u00e7\u00e3o\n\n| Categoria | Cobertura | Detalhe |\n|---|---|---|\n| Modelos marts | 100% | Todos os 5 marts + stg t\u00eam description com gr\u00e3o e origem |\n| PKs documentadas | 100% | Todas as PKs t\u00eam description + not_null + unique |\n| FKs documentadas | 100% (fct_orders) | customer_id e product_name com relationships test |\n| M\u00e9tricas de neg\u00f3cio | 100% | 8 m\u00e9tricas em metrics_customers.yml + doc blocks em docs/metrics.md |\n| Doc blocks | \u2705 | `{{ doc('delivered_revenue_brl') }}`, `{{ doc('net_revenue_brl') }}` referenciados em schema.yml |\n| Caveats no cat\u00e1logo | \u2705 | Todas as 8 m\u00e9tricas em catalog.py t\u00eam `caveats` documentados |\n\n### Seguran\u00e7a\n\n| Check | Status | Detalhe |\n|---|---|---|\n| profiles.yml gitignored | \u2705 | Linha `dbt_project/profiles.yml` em `.gitignore` |\n| *.json key gitignored | \u2705 (gitignored) / \u26a0\ufe0f (arquivo presente) | Padr\u00e3o `projeto-agents-*.json` no `.gitignore`; arquivo `projeto-agents-499023-94971d9081c3.json` existe na raiz do projeto |\n| Credenciais hardcoded | \u2705 Nenhuma | Todos os arquivos .py usam `os.environ[\"...\"]` ou `env_var()` |\n| env_var() nos profiles | \u2705 | `GCP_PROJECT_ID`, `GCP_KEYFILE_PATH` via env_var() |\n| .env no .gitignore | \u2705 | Primeira linha do `.gitignore` \u00e9 `.env` |\n| secrets/ no .gitignore | \u2705 | Linha `secrets/` presente |\n| ANTHROPIC_API_KEY | \u2705 | Via `os.environ[\"ANTHROPIC_API_KEY\"]` em agent.py e judge.py |\n| CORS | \u26a0\ufe0f | `allow_origins=[\"*\"]` em main.py \u2014 aberto para dev, inseguro em produ\u00e7\u00e3o |\n\n### Conven\u00e7\u00f5es de Naming\n\n\u2705 **Sem desvios detectados.** Todos os modelos seguem as conven\u00e7\u00f5es obrigat\u00f3rias:\n- `stg_ecommerce__orders` \u2014 padr\u00e3o `stg_<fonte>__<tabela>`\n- `fct_orders`, `dim_customers`, `dim_customers_kpis`, `dim_products`, `agg_daily_revenue` \u2014 padr\u00f5es corretos\n- Colunas monet\u00e1rias com sufixo `_brl` (total_amount_brl, delivered_revenue_brl, net_revenue_brl, etc.)\n- Colunas em ingl\u00eas snake_case\n\n### Observabilidade\n\n| Componente | Status | Detalhe |\n|---|---|---|\n| MCP Server logging | \u2705 | JSON estruturado para stderr em server.py; `tool_called`, `sql_validated`, `sql_blocked` |\n| BigQuery audit trail | \u2705 | `query_start`, `query_success`, `query_error` com source, sql_preview, elapsed_ms |\n| Agent API logging | \u2705 | `agent_start`, `agent_iteration`, `agent_complete` com tool_calls e elapsed_ms |\n| Evals results | \u2705 | Runs salvos em `evals/results/` com timestamps |\n\n---\n\n## Resultados dos Evals (run_20260615_163550)\n\n| M\u00e9trica | Score |\n|---|---|\n| Pass rate geral (estrutural) | 89% (16/18 casos) |\n| Citation rate | 100% |\n| Refusal accuracy | 100% |\n| Tool correctness | 89% |\n| Qualidade m\u00e9dia (LLM judge) | N/A (judge n\u00e3o executado no 2\u00ba run) |\n| Lat\u00eancia m\u00e9dia | 16.4s |\n| Lat\u00eancia m\u00e1xima | 48.5s |\n\n**Casos com problema:**\n- `V2-E06` \u2014 \"Qual a receita entregue por categoria de produto?\" \u2192 agente usou tool errada (product_category n\u00e3o \u00e9 dimens\u00e3o dispon\u00edvel em delivered_revenue no cat\u00e1logo; requer SQL customizado)\n- `V2-E09` \u2014 \"Quantos pedidos \u00fanicos existem no total e qual o valor m\u00e9dio por pedido?\" \u2192 agente usou query_metric em vez de run_sql_readonly (o cat\u00e1logo n\u00e3o tem m\u00e9trica para contagem total + ticket m\u00e9dio juntos)\n\n---\n\n## Gaps e Riscos\n\n### Riscos Cr\u00edticos (bloqueia produ\u00e7\u00e3o)\n\n- **[RISCO] Arquivo de chave JSON na raiz do projeto**: `projeto-agents-499023-94971d9081c3.json` est\u00e1 fisicamente presente no disco. Mesmo gitignored, pode ser comitado por acidente (`git add .` sem verifica\u00e7\u00e3o), exposto em backups, ou visto por quem acessa o diret\u00f3rio. Recomenda\u00e7\u00e3o: remover o arquivo e usar `gcloud auth application-default login` para dev, ou Workload Identity Federation para produ\u00e7\u00e3o.\n- **[RISCO] CORS aberto**: `allow_origins=[\"*\"]` em `agent_api/main.py` permite que qualquer dom\u00ednio chame a API do agente. Em produ\u00e7\u00e3o, restringir aos dom\u00ednios dos BI tools autorizados.\n\n### Gaps Importantes (degrada\u00e7\u00e3o de qualidade)\n\n- **[GAP] V2-E06 \u2014 dimens\u00e3o product_category n\u00e3o mapeada**: O cat\u00e1logo `catalog.py` n\u00e3o inclui `product_category` como dimens\u00e3o dispon\u00edvel para `delivered_revenue`. A query_builder gera SQL com GROUP BY em colunas que n\u00e3o existem em fct_orders (a coluna \u00e9 `product_name` no mart). Requer: adicionar l\u00f3gica de join com dim_products no query_builder, ou criar agg_revenue_by_product como mart dedicado.\n\n- **[GAP] Cat\u00e1logo dual n\u00e3o sincronizado**: `metrics_customers.yml` (MetricFlow) e `catalog.py` (MCP) definem as mesmas 8 m\u00e9tricas em formatos diferentes sem mecanismo de sincroniza\u00e7\u00e3o. Mudan\u00e7a em um n\u00e3o reflete no outro. Em produ\u00e7\u00e3o, catalog.py deveria ser gerado automaticamente a partir do dbt manifest.json.\n\n- **[GAP] judge.py n\u00e3o rodou no 2\u00ba run de evals**: `run_20260615_163550_judged.json` mostra 0 casos julgados. Provavelmente faltou passar `--dataset golden_dataset_v2.json` ao rodar o judge. A qualidade qualitativa do agente est\u00e1 sem valida\u00e7\u00e3o no run mais recente.\n\n- **[GAP] Sem testes de fonte em sources.yml**: O `models/raw/sources.yml` define a fonte mas sem testes (`not_null` em PKs, `accepted_values` em status). Esses testes detectariam problemas antes do staging processar dados corrompidos.\n\n- **[GAP] dbt contracts n\u00e3o implementados em fct_orders, dim_customers, agg_daily_revenue**: Apenas `dim_customers_kpis` tem `contract: enforced: true`. Os demais marts est\u00e3o sem garantia de schema est\u00e1vel para o Looker Studio.\n\n### Melhorias Futuras (nice to have)\n\n- **[MELHORIA] run_evals.py como orquestrador completo**: O arquivo existe mas n\u00e3o foi lido em detalhes. Verificar se encadeia runner \u2192 judge \u2192 report automaticamente em um \u00fanico comando.\n- **[MELHORIA] Incrementaliza\u00e7\u00e3o de fct_orders**: O staging faz full refresh (~192k linhas). Modelo incremental por `created_date` reduziria tempo de atualiza\u00e7\u00e3o.\n- **[MELHORIA] Cache de respostas repetidas**: Perguntas id\u00eanticas no /ask chamam o agente do zero. Um cache por hash de pergunta reduziria lat\u00eancia e custo.\n- **[MELHORIA] M\u00e9tricas de custo BigQuery**: O bq_client n\u00e3o registra bytes_billed. Em produ\u00e7\u00e3o, isso \u00e9 obrigat\u00f3rio para controle de custos.\n\n---\n\n## Pr\u00f3ximos Passos\n\nOrdenados por impacto \u00d7 esfor\u00e7o:\n\n| Prioridade | A\u00e7\u00e3o | Layer | Esfor\u00e7o | Impacto |\n|---|---|---|---|---|\n| 1 | Remover `projeto-agents-*.json` do disco e configurar Workload Identity ou instru\u00e7\u00e3o de uso de ADC | Seguran\u00e7a | ~1h | Alto (seguran\u00e7a cr\u00edtica) |\n| 2 | Adicionar `product_category` como dimens\u00e3o em delivered_revenue no cat\u00e1logo (via join com dim_products no query_builder) | Layer 3 | ~3h | Alto (corrige E06, habilita an\u00e1lise por categoria) |\n| 3 | Rodar judge.py no run mais recente com `--dataset golden_dataset_v2.json` para obter m\u00e9tricas qualitativas | Layer 5 | ~30min | Alto (visibilidade de qualidade) |\n| 4 | Adicionar testes em sources.yml (not_null em PKs, accepted_values em status) | Layer 0 | ~1h | M\u00e9dio (detec\u00e7\u00e3o precoce de corrup\u00e7\u00e3o) |\n| 5 | Implementar dbt contracts em fct_orders e agg_daily_revenue | Layer 2 | ~2h | M\u00e9dio (schema est\u00e1vel para Looker Studio) |\n| 6 | Restringir CORS em main.py para dom\u00ednios espec\u00edficos | Layer 4 | ~30min | M\u00e9dio (seguran\u00e7a para produ\u00e7\u00e3o) |\n| 7 | Gerar catalog.py automaticamente a partir de dbt manifest.json | Layer 3 | ~1d | M\u00e9dio (eliminar cat\u00e1logo dual) |\n\n---\n\n## Roadmap Futuro (n\u00e3o implementar sem pedido expl\u00edcito)\n\nConforme documentado no CLAUDE.md:\n- PostgreSQL como fonte operacional (substituindo seeds)\n- Airbyte / CDC / Debezium para ingest\u00e3o em tempo real\n- Docker / Docker Compose para orquestra\u00e7\u00e3o\n- Modelos incrementais no dbt\n- Airflow / Dagster para scheduling de pipelines\n- GitHub Actions para CI/CD com dbt test autom\u00e1tico\n- Evidently / Elementary para observabilidade de dados\n- MLOps / modelos preditivos (previs\u00e3o de churn, LTV)\n- Looker Studio dashboard conectado ao SA `agent_readonly`\n"}], "grading": null}, {"id": "eval-bootstrap-fraude-with_skill", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "fraude_roadmap.html", "type": "text", "content": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Roadmap \u2014 Agente de Fraude em Transa\u00e7\u00f5es Financeiras</title>\n  <style>\n    :root {\n      --bg: #0f1117;\n      --surface: #1a1d27;\n      --surface2: #242736;\n      --border: #2e3147;\n      --accent: #6c63ff;\n      --accent2: #00d4aa;\n      --warn: #f5a623;\n      --danger: #e74c3c;\n      --success: #2ecc71;\n      --text: #e8eaf0;\n      --text-muted: #8b90a7;\n      --code-bg: #13151f;\n    }\n\n    * { box-sizing: border-box; margin: 0; padding: 0; }\n\n    body {\n      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;\n      background: var(--bg);\n      color: var(--text);\n      line-height: 1.6;\n    }\n\n    /* Header */\n    header {\n      background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);\n      border-bottom: 1px solid var(--border);\n      padding: 2rem 2rem 1.5rem;\n      position: sticky;\n      top: 0;\n      z-index: 100;\n    }\n    .header-inner {\n      max-width: 1100px;\n      margin: 0 auto;\n    }\n    .badge-mode {\n      display: inline-block;\n      background: linear-gradient(90deg, var(--accent), var(--accent2));\n      color: #fff;\n      font-size: 0.7rem;\n      font-weight: 700;\n      letter-spacing: 0.12em;\n      text-transform: uppercase;\n      padding: 0.2rem 0.7rem;\n      border-radius: 20px;\n      margin-bottom: 0.5rem;\n    }\n    header h1 {\n      font-size: 1.6rem;\n      font-weight: 700;\n      margin-bottom: 0.3rem;\n    }\n    header h1 span { color: var(--accent2); }\n    .header-meta {\n      font-size: 0.82rem;\n      color: var(--text-muted);\n      display: flex;\n      gap: 1.5rem;\n      flex-wrap: wrap;\n      margin-top: 0.5rem;\n    }\n    .header-meta span::before { content: \"\u2022 \"; color: var(--accent); }\n\n    /* Filters bar */\n    .filters {\n      background: var(--surface);\n      border-bottom: 1px solid var(--border);\n      padding: 0.75rem 2rem;\n    }\n    .filters-inner {\n      max-width: 1100px;\n      margin: 0 auto;\n      display: flex;\n      gap: 0.5rem;\n      flex-wrap: wrap;\n      align-items: center;\n    }\n    .filter-label { font-size: 0.78rem; color: var(--text-muted); margin-right: 0.3rem; }\n    .filter-btn {\n      padding: 0.3rem 0.9rem;\n      border-radius: 20px;\n      border: 1px solid var(--border);\n      background: var(--surface2);\n      color: var(--text-muted);\n      font-size: 0.78rem;\n      cursor: pointer;\n      transition: all 0.15s;\n    }\n    .filter-btn:hover, .filter-btn.active {\n      background: var(--accent);\n      border-color: var(--accent);\n      color: #fff;\n    }\n\n    /* Layout */\n    .container {\n      max-width: 1100px;\n      margin: 0 auto;\n      padding: 2rem;\n    }\n\n    /* Section */\n    .section {\n      margin-bottom: 2rem;\n    }\n    .section-header {\n      display: flex;\n      align-items: center;\n      gap: 0.75rem;\n      margin-bottom: 1.25rem;\n      cursor: pointer;\n      user-select: none;\n    }\n    .section-header h2 {\n      font-size: 1.1rem;\n      font-weight: 600;\n    }\n    .section-number {\n      background: var(--accent);\n      color: #fff;\n      font-size: 0.7rem;\n      font-weight: 700;\n      width: 1.6rem;\n      height: 1.6rem;\n      border-radius: 50%;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n      flex-shrink: 0;\n    }\n    .collapse-icon {\n      margin-left: auto;\n      color: var(--text-muted);\n      font-size: 1rem;\n      transition: transform 0.2s;\n    }\n    .section.collapsed .collapse-icon { transform: rotate(-90deg); }\n    .section-body { transition: all 0.2s; }\n    .section.collapsed .section-body { display: none; }\n\n    /* Cards */\n    .card {\n      background: var(--surface);\n      border: 1px solid var(--border);\n      border-radius: 10px;\n      padding: 1.25rem;\n      margin-bottom: 1rem;\n    }\n    .card-title {\n      font-size: 0.95rem;\n      font-weight: 600;\n      margin-bottom: 0.75rem;\n      display: flex;\n      align-items: center;\n      gap: 0.5rem;\n    }\n    .phase-tag {\n      font-size: 0.68rem;\n      font-weight: 700;\n      padding: 0.15rem 0.55rem;\n      border-radius: 4px;\n      text-transform: uppercase;\n      letter-spacing: 0.08em;\n    }\n    .phase-0 { background: #3a1f6e; color: #c4a8ff; }\n    .phase-1 { background: #1f3a5f; color: #7ab8ff; }\n    .phase-2 { background: #1f4a3a; color: #7affd4; }\n    .phase-3 { background: #4a3a1f; color: #ffd47a; }\n    .phase-4 { background: #4a1f2e; color: #ff9ab8; }\n    .phase-5 { background: #1f3a4a; color: #7ae0ff; }\n    .phase-6 { background: #3a3a1f; color: #e0ff7a; }\n\n    /* Architecture diagram */\n    .arch-diagram {\n      background: var(--code-bg);\n      border: 1px solid var(--border);\n      border-radius: 8px;\n      padding: 1.25rem 1.5rem;\n      font-family: 'Courier New', monospace;\n      font-size: 0.82rem;\n      line-height: 1.8;\n      overflow-x: auto;\n    }\n    .arch-layer { display: flex; align-items: center; gap: 0.75rem; }\n    .arch-label { color: var(--text); }\n    .arch-label .highlight { color: var(--accent2); font-weight: 600; }\n    .arch-label .sub { color: var(--text-muted); font-size: 0.78rem; }\n    .arch-arrow { color: var(--accent); opacity: 0.6; padding-left: 0.5rem; }\n    .arch-indent { padding-left: 1.5rem; }\n\n    /* Tables */\n    .data-table {\n      width: 100%;\n      border-collapse: collapse;\n      font-size: 0.83rem;\n    }\n    .data-table th {\n      background: var(--surface2);\n      color: var(--text-muted);\n      font-weight: 600;\n      text-align: left;\n      padding: 0.6rem 0.9rem;\n      border-bottom: 1px solid var(--border);\n      font-size: 0.75rem;\n      text-transform: uppercase;\n      letter-spacing: 0.06em;\n    }\n    .data-table td {\n      padding: 0.6rem 0.9rem;\n      border-bottom: 1px solid var(--border);\n      vertical-align: top;\n    }\n    .data-table tr:last-child td { border-bottom: none; }\n    .data-table tr:hover td { background: var(--surface2); }\n    code.inline {\n      background: var(--code-bg);\n      border: 1px solid var(--border);\n      padding: 0.1rem 0.4rem;\n      border-radius: 4px;\n      font-family: 'Courier New', monospace;\n      font-size: 0.8rem;\n      color: var(--accent2);\n    }\n\n    /* Code block */\n    pre.code-block {\n      background: var(--code-bg);\n      border: 1px solid var(--border);\n      border-radius: 8px;\n      padding: 1rem 1.25rem;\n      font-family: 'Courier New', monospace;\n      font-size: 0.79rem;\n      line-height: 1.7;\n      overflow-x: auto;\n      color: #c5d8ff;\n      margin-top: 0.75rem;\n    }\n    pre.code-block .kw { color: #c792ea; }\n    pre.code-block .str { color: #c3e88d; }\n    pre.code-block .cmt { color: #546e7a; font-style: italic; }\n    pre.code-block .fn { color: #82aaff; }\n    pre.code-block .op { color: var(--accent2); }\n\n    /* Checklist */\n    .checklist { list-style: none; }\n    .checklist li {\n      display: flex;\n      align-items: flex-start;\n      gap: 0.6rem;\n      padding: 0.35rem 0;\n      font-size: 0.86rem;\n      border-bottom: 1px solid var(--border);\n    }\n    .checklist li:last-child { border-bottom: none; }\n    .check-box {\n      width: 1rem;\n      height: 1rem;\n      border: 2px solid var(--border);\n      border-radius: 3px;\n      flex-shrink: 0;\n      margin-top: 0.15rem;\n      cursor: pointer;\n      transition: all 0.15s;\n    }\n    .checklist li.done .check-box {\n      background: var(--success);\n      border-color: var(--success);\n    }\n\n    /* Risk cards */\n    .risk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }\n    @media (max-width: 700px) { .risk-grid { grid-template-columns: 1fr; } }\n    .risk-card {\n      background: var(--surface2);\n      border-radius: 8px;\n      padding: 0.9rem 1rem;\n      border-left: 3px solid;\n      font-size: 0.83rem;\n    }\n    .risk-card.high { border-color: var(--danger); }\n    .risk-card.medium { border-color: var(--warn); }\n    .risk-card.low { border-color: var(--success); }\n    .risk-title { font-weight: 600; margin-bottom: 0.3rem; }\n    .risk-prob { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.4rem; }\n    .risk-prob span { font-weight: 600; }\n    .risk-prob .high-prob { color: var(--danger); }\n    .risk-prob .med-prob { color: var(--warn); }\n\n    /* Eval cases */\n    .eval-row td:nth-child(2) { color: var(--text-muted); font-size: 0.78rem; }\n    .refuse-badge {\n      display: inline-block;\n      background: var(--danger);\n      color: #fff;\n      font-size: 0.65rem;\n      padding: 0.1rem 0.4rem;\n      border-radius: 3px;\n      font-weight: 700;\n    }\n    .allow-badge {\n      display: inline-block;\n      background: var(--success);\n      color: #fff;\n      font-size: 0.65rem;\n      padding: 0.1rem 0.4rem;\n      border-radius: 3px;\n      font-weight: 700;\n    }\n\n    /* Timeline */\n    .timeline {\n      display: flex;\n      gap: 0;\n      margin-bottom: 0.5rem;\n      border-radius: 8px;\n      overflow: hidden;\n    }\n    .tl-phase {\n      flex: 1;\n      text-align: center;\n      padding: 0.6rem 0.3rem;\n      font-size: 0.7rem;\n      font-weight: 600;\n      cursor: default;\n    }\n    .tl-label { font-size: 0.62rem; opacity: 0.8; }\n    .tl-0 { background: #3a1f6e; color: #c4a8ff; }\n    .tl-1 { background: #1f3a5f; color: #7ab8ff; }\n    .tl-2 { background: #1f4a3a; color: #7affd4; }\n    .tl-3 { background: #4a3a1f; color: #ffd47a; }\n    .tl-4 { background: #4a1f2e; color: #ff9ab8; }\n    .tl-5 { background: #1f3a4a; color: #7ae0ff; }\n    .tl-6 { background: #3a3a1f; color: #e0ff7a; }\n\n    /* Progress bar */\n    .progress-bar {\n      height: 4px;\n      background: var(--border);\n      border-radius: 2px;\n      margin: 0.4rem 0 0.75rem;\n      overflow: hidden;\n    }\n    .progress-fill {\n      height: 100%;\n      background: linear-gradient(90deg, var(--accent), var(--accent2));\n      border-radius: 2px;\n      transition: width 0.4s;\n    }\n\n    /* Metric table */\n    .metric-card {\n      background: var(--surface2);\n      border-radius: 8px;\n      padding: 0.8rem 1rem;\n      margin-bottom: 0.5rem;\n      border: 1px solid var(--border);\n    }\n    .metric-name { font-family: 'Courier New', monospace; color: var(--accent2); font-size: 0.82rem; font-weight: 600; }\n    .metric-label { font-size: 0.78rem; color: var(--text-muted); margin: 0.15rem 0; }\n    .metric-expr {\n      background: var(--code-bg);\n      border-radius: 4px;\n      padding: 0.3rem 0.6rem;\n      font-family: 'Courier New', monospace;\n      font-size: 0.72rem;\n      color: #c3e88d;\n      margin-top: 0.4rem;\n    }\n    .metric-dims { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.3rem; }\n    .dim-tag {\n      display: inline-block;\n      background: var(--border);\n      border-radius: 3px;\n      padding: 0.05rem 0.35rem;\n      margin: 0.1rem 0.15rem 0.1rem 0;\n      font-size: 0.68rem;\n    }\n\n    /* Security checklist special */\n    .security-grid {\n      display: grid;\n      grid-template-columns: 1fr 1fr;\n      gap: 0.5rem;\n    }\n    @media (max-width: 600px) { .security-grid { grid-template-columns: 1fr; } }\n    .sec-item {\n      display: flex;\n      align-items: center;\n      gap: 0.5rem;\n      background: var(--surface2);\n      border-radius: 6px;\n      padding: 0.5rem 0.75rem;\n      font-size: 0.82rem;\n      border: 1px solid var(--border);\n    }\n    .sec-icon { font-size: 0.9rem; }\n\n    /* Roadmap future */\n    .future-item {\n      display: flex;\n      align-items: flex-start;\n      gap: 0.75rem;\n      padding: 0.75rem 0;\n      border-bottom: 1px solid var(--border);\n      font-size: 0.85rem;\n    }\n    .future-item:last-child { border-bottom: none; }\n    .future-dot {\n      width: 8px;\n      height: 8px;\n      border-radius: 50%;\n      background: var(--text-muted);\n      flex-shrink: 0;\n      margin-top: 0.45rem;\n    }\n    .future-title { font-weight: 600; }\n    .future-desc { color: var(--text-muted); font-size: 0.8rem; }\n\n    /* Sticky progress */\n    #progress-status {\n      position: fixed;\n      bottom: 1.5rem;\n      right: 1.5rem;\n      background: var(--surface);\n      border: 1px solid var(--border);\n      border-radius: 10px;\n      padding: 0.75rem 1rem;\n      font-size: 0.78rem;\n      z-index: 200;\n      box-shadow: 0 8px 32px rgba(0,0,0,0.5);\n    }\n    #progress-label { color: var(--text-muted); margin-bottom: 0.3rem; }\n    #progress-count { font-weight: 700; color: var(--accent2); font-size: 1.1rem; }\n  </style>\n</head>\n<body>\n\n<header>\n  <div class=\"header-inner\">\n    <div class=\"badge-mode\">Bootstrap Mode \u2014 Novo Projeto</div>\n    <h1>Agente de <span>Fraude</span> em Transa\u00e7\u00f5es Financeiras</h1>\n    <div class=\"header-meta\">\n      <span>Data: 2026-06-15</span>\n      <span>Stack: dbt Core + BigQuery + MCP Server + FastAPI</span>\n      <span>Estimativa: 3\u20134 semanas</span>\n      <span>7 Layers \u00b7 6 Fases</span>\n    </div>\n  </div>\n</header>\n\n<div class=\"filters\">\n  <div class=\"filters-inner\">\n    <span class=\"filter-label\">Filtrar fase:</span>\n    <button class=\"filter-btn active\" onclick=\"filterPhase('all', this)\">Todas</button>\n    <button class=\"filter-btn\" onclick=\"filterPhase('data', this)\">Data Layer</button>\n    <button class=\"filter-btn\" onclick=\"filterPhase('mcp', this)\">MCP Server</button>\n    <button class=\"filter-btn\" onclick=\"filterPhase('agent', this)\">Agent API</button>\n    <button class=\"filter-btn\" onclick=\"filterPhase('evals', this)\">Evals</button>\n    <button class=\"filter-btn\" onclick=\"filterPhase('security', this)\">Seguran\u00e7a</button>\n  </div>\n</div>\n\n<div class=\"container\">\n\n  <!-- Timeline -->\n  <div class=\"timeline\">\n    <div class=\"tl-phase tl-0\">Fase 0<div class=\"tl-label\">Setup 4h</div></div>\n    <div class=\"tl-phase tl-1\">Fase 1<div class=\"tl-label\">Data 4h</div></div>\n    <div class=\"tl-phase tl-2\">Fase 2<div class=\"tl-label\">Staging 6h</div></div>\n    <div class=\"tl-phase tl-3\">Fase 3<div class=\"tl-label\">Marts 2d</div></div>\n    <div class=\"tl-phase tl-4\">Fase 4<div class=\"tl-label\">MCP 1.5d</div></div>\n    <div class=\"tl-phase tl-5\">Fase 5<div class=\"tl-label\">API 1d</div></div>\n    <div class=\"tl-phase tl-6\">Fase 6<div class=\"tl-label\">Evals 6h</div></div>\n  </div>\n\n  <!-- Vis\u00e3o Geral -->\n  <div class=\"section\" id=\"sec-vision\" data-tags=\"all\">\n    <div class=\"section-header\" onclick=\"toggleSection('sec-vision')\">\n      <div class=\"section-number\">0</div>\n      <h2>Vis\u00e3o do Projeto</h2>\n      <span class=\"collapse-icon\">\u25bc</span>\n    </div>\n    <div class=\"section-body\">\n      <div class=\"card\">\n        <p style=\"font-size:0.92rem; margin-bottom:1rem;\">\n          O agente responder\u00e1 perguntas anal\u00edticas sobre <strong>fraude em transa\u00e7\u00f5es financeiras</strong> em linguagem natural.\n          A pergunta central \u00e9: <strong style=\"color:var(--accent2)\">\"qual a taxa de fraude por canal (app/web/atm) e por pa\u00eds?\"</strong>\n          O agente exp\u00f5e os dados via MCP Server para analistas e sistemas de BI de forma segura, rastre\u00e1vel e sem acesso direto ao banco.\n        </p>\n        <div class=\"arch-diagram\">\n          <div class=\"arch-layer\"><span class=\"arch-label\"><span class=\"highlight\">CSV de transa\u00e7\u00f5es</span> <span class=\"sub\">(transaction_id, customer_id, amount, merchant_id, transaction_date, channel, country, is_fraud, device_fingerprint, ip_address)</span></span></div>\n          <div class=\"arch-layer\"><span class=\"arch-arrow\">\u2193 dbt seed</span></div>\n          <div class=\"arch-layer\"><span class=\"arch-label\"><span class=\"highlight\">BigQuery: fraud_raw</span> <span class=\"sub\">(espelho fiel \u2014 zero transforma\u00e7\u00e3o)</span></span></div>\n          <div class=\"arch-layer\"><span class=\"arch-arrow\">\u2193 dbt run</span></div>\n          <div class=\"arch-layer\"><span class=\"arch-label\"><span class=\"highlight\">BigQuery: fraud_staging</span> <span class=\"sub\">(views \u2014 dedup, casts, normalize channel/country)</span></span></div>\n          <div class=\"arch-layer\"><span class=\"arch-arrow\">\u2193</span></div>\n          <div class=\"arch-layer\"><span class=\"arch-label\"><span class=\"highlight\">BigQuery: fraud_marts</span> <span class=\"sub\">(tables \u2014 joins, m\u00e9tricas de neg\u00f3cio)</span></span></div>\n          <div class=\"arch-indent\">\n            <div class=\"arch-layer\"><span class=\"arch-label\"><span class=\"sub\">\u251c\u2500\u2500 fct_transactions &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (gr\u00e3o: 1 por transaction_id)</span></span></div>\n            <div class=\"arch-layer\"><span class=\"arch-label\"><span class=\"sub\">\u251c\u2500\u2500 dim_customers &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (gr\u00e3o: 1 por customer_id)</span></span></div>\n            <div class=\"arch-layer\"><span class=\"arch-label\"><span class=\"sub\">\u251c\u2500\u2500 dim_merchants &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (gr\u00e3o: 1 por merchant_id)</span></span></div>\n            <div class=\"arch-layer\"><span class=\"arch-label\"><span class=\"sub\">\u251c\u2500\u2500 agg_daily_fraud &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (gr\u00e3o: 1 por date + channel + country)</span></span></div>\n            <div class=\"arch-layer\"><span class=\"arch-label\"><span class=\"sub\">\u2514\u2500\u2500 agg_channel_fraud_rate (gr\u00e3o: 1 por channel)</span></span></div>\n          </div>\n          <div class=\"arch-layer\"><span class=\"arch-arrow\">\u2193</span></div>\n          <div class=\"arch-layer\"><span class=\"arch-label\"><span class=\"highlight\">MCP Server</span> <span class=\"sub\">(6 tools: list_metrics, query_metric, run_sql_readonly, get_lineage, run_quality_checks, explain_fraud_pattern)</span></span></div>\n          <div class=\"arch-layer\"><span class=\"arch-arrow\">\u2193</span></div>\n          <div class=\"arch-layer\"><span class=\"arch-label\"><span class=\"highlight\">FastAPI Agent</span> <span class=\"sub\">(/ask /query /metrics /health)</span></span></div>\n          <div class=\"arch-layer\"><span class=\"arch-arrow\">\u2193</span></div>\n          <div class=\"arch-layer\"><span class=\"arch-label\"><span class=\"highlight\">Evals</span> <span class=\"sub\">(15 casos no golden dataset)</span></span></div>\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <!-- Fase 0 \u2014 Setup -->\n  <div class=\"section\" id=\"sec-phase0\" data-tags=\"all security\">\n    <div class=\"section-header\" onclick=\"toggleSection('sec-phase0')\">\n      <div class=\"section-number\">1</div>\n      <h2>Fase 0 \u2014 Setup <span style=\"color:var(--text-muted);font-size:0.85rem;font-weight:400\">(4h)</span></h2>\n      <span class=\"collapse-icon\">\u25bc</span>\n    </div>\n    <div class=\"section-body\">\n      <div class=\"card\">\n        <div class=\"card-title\"><span class=\"phase-tag phase-0\">Fase 0</span> Configura\u00e7\u00e3o Inicial</div>\n        <ul class=\"checklist\" id=\"checklist-phase0\">\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Criar <code class=\"inline\">dbt_project.yml</code> com schemas <code class=\"inline\">fraud_raw</code> / <code class=\"inline\">fraud_staging</code> / <code class=\"inline\">fraud_marts</code></span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Criar <code class=\"inline\">profiles.yml</code> com env_vars (<code class=\"inline\">GCP_PROJECT_ID</code>, <code class=\"inline\">GCP_KEYFILE_PATH</code>)</span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Criar <code class=\"inline\">packages.yml</code> com <code class=\"inline\">dbt_utils</code> + <code class=\"inline\">dbt_expectations</code></span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Adicionar <code class=\"inline\">profiles.yml</code>, <code class=\"inline\">secrets/</code>, <code class=\"inline\">*.json</code>, <code class=\"inline\">.env</code> ao <code class=\"inline\">.gitignore</code></span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Criar datasets no BigQuery: <code class=\"inline\">fraud_raw</code>, <code class=\"inline\">fraud_staging</code>, <code class=\"inline\">fraud_marts</code></span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Criar service account <code class=\"inline\">agent_readonly</code> com acesso somente ao dataset <code class=\"inline\">fraud_marts</code></span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Criar <code class=\"inline\">.env.example</code> com vars necess\u00e1rias (sem valores reais)</span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Criar estrutura de diret\u00f3rios: <code class=\"inline\">dbt_project/</code>, <code class=\"inline\">mcp_server/</code>, <code class=\"inline\">agent_api/</code>, <code class=\"inline\">evals/</code></span></li>\n        </ul>\n      </div>\n    </div>\n  </div>\n\n  <!-- Fase 1 \u2014 Data Layer -->\n  <div class=\"section\" id=\"sec-phase1\" data-tags=\"all data\">\n    <div class=\"section-header\" onclick=\"toggleSection('sec-phase1')\">\n      <div class=\"section-number\">2</div>\n      <h2>Fase 1 \u2014 Data Layer <span style=\"color:var(--text-muted);font-size:0.85rem;font-weight:400\">(4h)</span></h2>\n      <span class=\"collapse-icon\">\u25bc</span>\n    </div>\n    <div class=\"section-body\">\n      <div class=\"card\">\n        <div class=\"card-title\"><span class=\"phase-tag phase-1\">Fase 1</span> Seeds e Sources</div>\n        <ul class=\"checklist\">\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Criar <code class=\"inline\">seeds/seed_transactions.csv</code> \u2014 carregar o CSV de transa\u00e7\u00f5es</span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Criar <code class=\"inline\">models/raw/sources.yml</code> com defini\u00e7\u00e3o da fonte</span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Adicionar testes de fonte: <code class=\"inline\">not_null + unique</code> em <code class=\"inline\">transaction_id</code></span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Adicionar <code class=\"inline\">accepted_values</code> em <code class=\"inline\">is_fraud</code> (0, 1) e <code class=\"inline\">channel</code> (app, web, atm)</span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Executar <code class=\"inline\">dbt seed</code> e verificar carga no BigQuery</span></li>\n        </ul>\n      </div>\n      <div class=\"card\">\n        <div class=\"card-title\">Armadilhas Conhecidas do Dataset</div>\n        <table class=\"data-table\">\n          <thead><tr><th>Campo</th><th>Problema</th><th>Tratamento no Staging</th></tr></thead>\n          <tbody>\n            <tr><td><code class=\"inline\">transaction_id</code></td><td>Duplicatas na fonte</td><td>ROW_NUMBER por timestamp mais recente</td></tr>\n            <tr><td><code class=\"inline\">transaction_date</code></td><td>Fusos misturados / formatos variados</td><td>SAFE_CAST AS TIMESTAMP; naive = UTC</td></tr>\n            <tr><td><code class=\"inline\">channel</code></td><td>Case inconsistente (App, APP, app)</td><td>LOWER(TRIM()) + macro normalize_channel</td></tr>\n            <tr><td><code class=\"inline\">country</code></td><td>Nomes por extenso misturados com ISO</td><td>Macro normalize_country \u2192 ISO 3166-1 alpha-2</td></tr>\n            <tr><td><code class=\"inline\">amount</code></td><td>Valores negativos (estornos)</td><td>ABS() + flag is_reversal</td></tr>\n            <tr><td><code class=\"inline\">is_fraud</code></td><td>NULL em transa\u00e7\u00f5es pendentes</td><td>Flag is_review_pending; excluir de m\u00e9tricas de taxa</td></tr>\n            <tr><td><code class=\"inline\">device_fingerprint</code></td><td>NULL em ATM (sem dispositivo)</td><td>NULL \u00e9 valor esperado \u2014 n\u00e3o flag de erro</td></tr>\n            <tr><td><code class=\"inline\">ip_address</code></td><td>PII sens\u00edvel + NULL em ATM</td><td>Avaliar pol\u00edtica de hashing antes de subir ao BQ</td></tr>\n          </tbody>\n        </table>\n      </div>\n    </div>\n  </div>\n\n  <!-- Fase 2 \u2014 Staging -->\n  <div class=\"section\" id=\"sec-phase2\" data-tags=\"all data\">\n    <div class=\"section-header\" onclick=\"toggleSection('sec-phase2')\">\n      <div class=\"section-number\">3</div>\n      <h2>Fase 2 \u2014 Staging <span style=\"color:var(--text-muted);font-size:0.85rem;font-weight:400\">(6h)</span></h2>\n      <span class=\"collapse-icon\">\u25bc</span>\n    </div>\n    <div class=\"section-body\">\n      <div class=\"card\">\n        <div class=\"card-title\"><span class=\"phase-tag phase-2\">Fase 2</span> Modelos de Limpeza</div>\n        <ul class=\"checklist\">\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Criar <code class=\"inline\">models/staging/stg_fraud__transactions.sql</code> \u2014 dedup + cast + normalize</span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Criar <code class=\"inline\">models/staging/stg_fraud__transactions.yml</code> \u2014 descriptions em todas as colunas</span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Criar <code class=\"inline\">macros/normalize_channel.sql</code> \u2014 padronizar app/web/atm</span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Criar <code class=\"inline\">macros/normalize_country.sql</code> \u2014 mapear para ISO 3166-1</span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Garantir materializa\u00e7\u00e3o como <code class=\"inline\">view</code> no dbt_project.yml para o schema staging</span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Usar <code class=\"inline\">source()</code> \u2014 nunca <code class=\"inline\">ref()</code> \u2014 para referenciar a fonte</span></li>\n        </ul>\n        <div style=\"margin-top:0.75rem;\">\n          <div style=\"font-size:0.78rem; color:var(--text-muted); margin-bottom:0.3rem;\">Refer\u00eancia de SQL \u2014 stg_fraud__transactions.sql</div>\n          <pre class=\"code-block\"><span class=\"kw\">WITH</span> source <span class=\"kw\">AS</span> (\n    <span class=\"kw\">SELECT</span> * <span class=\"kw\">FROM</span> {{ <span class=\"fn\">source</span>(<span class=\"str\">'fraud_raw'</span>, <span class=\"str\">'seed_transactions'</span>) }}\n),\n\ndeduped <span class=\"kw\">AS</span> (\n    <span class=\"kw\">SELECT</span> *,\n        <span class=\"fn\">ROW_NUMBER</span>() <span class=\"kw\">OVER</span> (\n            <span class=\"kw\">PARTITION BY</span> transaction_id\n            <span class=\"kw\">ORDER BY</span> transaction_date <span class=\"kw\">DESC</span>\n        ) <span class=\"kw\">AS</span> row_num\n    <span class=\"kw\">FROM</span> source\n),\n\ncleaned <span class=\"kw\">AS</span> (\n    <span class=\"kw\">SELECT</span>\n        transaction_id,\n        customer_id,\n        merchant_id,\n        <span class=\"fn\">SAFE_CAST</span>(amount <span class=\"kw\">AS</span> NUMERIC)             <span class=\"kw\">AS</span> amount,\n        <span class=\"fn\">SAFE_CAST</span>(transaction_date <span class=\"kw\">AS</span> TIMESTAMP)   <span class=\"kw\">AS</span> transaction_at,\n        {{ <span class=\"fn\">normalize_channel</span>(<span class=\"str\">'channel'</span>) }}          <span class=\"kw\">AS</span> channel,\n        {{ <span class=\"fn\">normalize_country</span>(<span class=\"str\">'country'</span>) }}          <span class=\"kw\">AS</span> country_code,\n        <span class=\"fn\">CAST</span>(is_fraud <span class=\"kw\">AS</span> INT64)                    <span class=\"kw\">AS</span> is_fraud,\n        device_fingerprint,\n        ip_address,\n        <span class=\"kw\">CASE WHEN</span> is_fraud <span class=\"kw\">IS NULL THEN TRUE\n             ELSE FALSE END</span>                        <span class=\"kw\">AS</span> is_review_pending\n    <span class=\"kw\">FROM</span> deduped\n    <span class=\"kw\">WHERE</span> row_num <span class=\"op\">=</span> <span class=\"str\">1</span>\n      <span class=\"kw\">AND</span> <span class=\"fn\">SAFE_CAST</span>(amount <span class=\"kw\">AS</span> NUMERIC) <span class=\"kw\">IS NOT NULL</span>\n)\n\n<span class=\"kw\">SELECT</span> * <span class=\"kw\">FROM</span> cleaned</pre>\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <!-- Fase 3 \u2014 Marts -->\n  <div class=\"section\" id=\"sec-phase3\" data-tags=\"all data\">\n    <div class=\"section-header\" onclick=\"toggleSection('sec-phase3')\">\n      <div class=\"section-number\">4</div>\n      <h2>Fase 3 \u2014 Marts <span style=\"color:var(--text-muted);font-size:0.85rem;font-weight:400\">(2 dias)</span></h2>\n      <span class=\"collapse-icon\">\u25bc</span>\n    </div>\n    <div class=\"section-body\">\n      <div class=\"card\">\n        <div class=\"card-title\"><span class=\"phase-tag phase-3\">Fase 3</span> Modelos de Neg\u00f3cio</div>\n        <table class=\"data-table\">\n          <thead><tr><th>Modelo</th><th>Gr\u00e3o</th><th>Joins</th><th>M\u00e9tricas Principais</th></tr></thead>\n          <tbody>\n            <tr><td><code class=\"inline\">fct_transactions</code></td><td>1 por transaction_id</td><td>stg_fraud__transactions</td><td>amount, is_fraud, channel, country_code</td></tr>\n            <tr><td><code class=\"inline\">dim_customers</code></td><td>1 por customer_id</td><td>fct_transactions (agg)</td><td>total_transactions, total_fraud, fraud_rate</td></tr>\n            <tr><td><code class=\"inline\">dim_merchants</code></td><td>1 por merchant_id</td><td>fct_transactions (agg)</td><td>merchant_fraud_rate, avg_transaction_amount</td></tr>\n            <tr><td><code class=\"inline\">agg_daily_fraud</code></td><td>1 por date + channel + country</td><td>fct_transactions</td><td>daily_fraud_rate, daily_transaction_count</td></tr>\n            <tr><td><code class=\"inline\">agg_channel_fraud_rate</code></td><td>1 por channel</td><td>fct_transactions</td><td>fraud_rate_pct, total_transactions, fraud_amount</td></tr>\n          </tbody>\n        </table>\n        <div style=\"margin-top:1rem;\">\n          <ul class=\"checklist\">\n            <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Materializa\u00e7\u00e3o como <code class=\"inline\">table</code> no dbt_project.yml para o schema marts</span></li>\n            <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span><code class=\"inline\">not_null + unique</code> em PKs de todos os marts</span></li>\n            <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span><code class=\"inline\">relationships</code> para FKs (customer_id, merchant_id)</span></li>\n            <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span><code class=\"inline\">accepted_values</code> em channel e is_fraud</span></li>\n            <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span><code class=\"inline\">dbt_utils.accepted_range (min: 0)</code> em amount</span></li>\n            <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>dbt contracts (<code class=\"inline\">enforced: true</code>) nos marts principais</span></li>\n            <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Criar <code class=\"inline\">models/marts/metrics_fraud.yml</code> com 5 m\u00e9tricas MetricFlow</span></li>\n            <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Criar <code class=\"inline\">docs/metrics.md</code> com doc blocks das m\u00e9tricas complexas</span></li>\n          </ul>\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <!-- Fase 4 \u2014 MCP Server -->\n  <div class=\"section\" id=\"sec-phase4\" data-tags=\"all mcp\">\n    <div class=\"section-header\" onclick=\"toggleSection('sec-phase4')\">\n      <div class=\"section-number\">5</div>\n      <h2>Fase 4 \u2014 MCP Server <span style=\"color:var(--text-muted);font-size:0.85rem;font-weight:400\">(1,5 dias)</span></h2>\n      <span class=\"collapse-icon\">\u25bc</span>\n    </div>\n    <div class=\"section-body\">\n      <div class=\"card\">\n        <div class=\"card-title\"><span class=\"phase-tag phase-4\">Fase 4</span> Cat\u00e1logo de M\u00e9tricas (catalog.py)</div>\n        <div class=\"metric-card\">\n          <div class=\"metric-name\">fraud_rate</div>\n          <div class=\"metric-label\">Taxa de Fraude (%)</div>\n          <div class=\"metric-expr\">SAFE_DIVIDE(COUNTIF(is_fraud=1), COUNT(*)) * 100</div>\n          <div class=\"metric-dims\">Dimens\u00f5es: <span class=\"dim-tag\">channel</span><span class=\"dim-tag\">country_code</span><span class=\"dim-tag\">date</span></div>\n        </div>\n        <div class=\"metric-card\">\n          <div class=\"metric-name\">fraud_count</div>\n          <div class=\"metric-label\">Total de Transa\u00e7\u00f5es Fraudulentas</div>\n          <div class=\"metric-expr\">COUNTIF(is_fraud=1)</div>\n          <div class=\"metric-dims\">Dimens\u00f5es: <span class=\"dim-tag\">channel</span><span class=\"dim-tag\">country_code</span><span class=\"dim-tag\">date</span></div>\n        </div>\n        <div class=\"metric-card\">\n          <div class=\"metric-name\">transaction_count</div>\n          <div class=\"metric-label\">Total de Transa\u00e7\u00f5es</div>\n          <div class=\"metric-expr\">COUNT(transaction_id)</div>\n          <div class=\"metric-dims\">Dimens\u00f5es: <span class=\"dim-tag\">channel</span><span class=\"dim-tag\">country_code</span><span class=\"dim-tag\">date</span></div>\n        </div>\n        <div class=\"metric-card\">\n          <div class=\"metric-name\">fraud_amount</div>\n          <div class=\"metric-label\">Valor Total de Fraudes</div>\n          <div class=\"metric-expr\">SUM(CASE WHEN is_fraud=1 THEN amount ELSE 0 END)</div>\n          <div class=\"metric-dims\">Dimens\u00f5es: <span class=\"dim-tag\">channel</span><span class=\"dim-tag\">country_code</span><span class=\"dim-tag\">date</span></div>\n        </div>\n        <div class=\"metric-card\">\n          <div class=\"metric-name\">avg_fraud_amount</div>\n          <div class=\"metric-label\">Valor M\u00e9dio de Transa\u00e7\u00f5es Fraudulentas</div>\n          <div class=\"metric-expr\">SAFE_DIVIDE(SUM(CASE WHEN is_fraud=1 THEN amount ELSE 0 END), NULLIF(COUNTIF(is_fraud=1),0))</div>\n          <div class=\"metric-dims\">Dimens\u00f5es: <span class=\"dim-tag\">channel</span><span class=\"dim-tag\">country_code</span></div>\n        </div>\n        <div class=\"metric-card\">\n          <div class=\"metric-name\">customer_fraud_rate</div>\n          <div class=\"metric-label\">Taxa de Fraude por Cliente</div>\n          <div class=\"metric-expr\">SAFE_DIVIDE(COUNTIF(is_fraud=1), COUNT(*)) * 100</div>\n          <div class=\"metric-dims\">Dimens\u00f5es: <span class=\"dim-tag\">customer_id</span></div>\n        </div>\n      </div>\n      <div class=\"card\">\n        <div class=\"card-title\">Tools do server.py</div>\n        <table class=\"data-table\">\n          <thead><tr><th>Tool</th><th>Descri\u00e7\u00e3o</th><th>Uso Principal</th></tr></thead>\n          <tbody>\n            <tr><td><code class=\"inline\">list_metrics</code></td><td>Lista m\u00e9tricas com descriptions</td><td>Sempre antes de qualquer query</td></tr>\n            <tr><td><code class=\"inline\">query_metric</code></td><td>Executa m\u00e9trica via catalog (parametrizado)</td><td>M\u00e9tricas padr\u00e3o do cat\u00e1logo</td></tr>\n            <tr><td><code class=\"inline\">run_sql_readonly</code></td><td>SQL livre validado com sqlglot</td><td>Perguntas ad-hoc n\u00e3o cobertas pelo cat\u00e1logo</td></tr>\n            <tr><td><code class=\"inline\">get_lineage</code></td><td>Linhagem de uma m\u00e9trica</td><td>Rastreabilidade e auditoria</td></tr>\n            <tr><td><code class=\"inline\">run_quality_checks</code></td><td>Executa testes dbt</td><td>Verifica\u00e7\u00e3o de qualidade on-demand</td></tr>\n            <tr><td><code class=\"inline\">explain_fraud_pattern</code></td><td>Contexto sobre padr\u00f5es de fraude</td><td>Perguntas contextuais sobre o dom\u00ednio</td></tr>\n          </tbody>\n        </table>\n        <ul class=\"checklist\" style=\"margin-top:0.75rem\">\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Criar <code class=\"inline\">mcp_server/catalog.py</code> com as 6 m\u00e9tricas acima</span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Criar <code class=\"inline\">mcp_server/sql_validator.py</code> com sqlglot \u2014 bloquear DDL/DML + whitelist schema fraud_marts</span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Criar <code class=\"inline\">mcp_server/bq_client.py</code> com autentica\u00e7\u00e3o via env_var</span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Criar <code class=\"inline\">mcp_server/server.py</code> com FastMCP e as 6 tools</span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Logging para <strong>stderr</strong> (nunca stdout \u2014 quebra protocolo MCP stdio)</span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Criar <code class=\"inline\">mcp_server/claude_desktop_config.json</code> com env vars</span></li>\n        </ul>\n      </div>\n    </div>\n  </div>\n\n  <!-- Fase 5 \u2014 Agent API -->\n  <div class=\"section\" id=\"sec-phase5\" data-tags=\"all agent\">\n    <div class=\"section-header\" onclick=\"toggleSection('sec-phase5')\">\n      <div class=\"section-number\">6</div>\n      <h2>Fase 5 \u2014 Agent API <span style=\"color:var(--text-muted);font-size:0.85rem;font-weight:400\">(1 dia)</span></h2>\n      <span class=\"collapse-icon\">\u25bc</span>\n    </div>\n    <div class=\"section-body\">\n      <div class=\"card\">\n        <div class=\"card-title\"><span class=\"phase-tag phase-5\">Fase 5</span> FastAPI + Loop Ag\u00eantico</div>\n        <table class=\"data-table\">\n          <thead><tr><th>Endpoint</th><th>M\u00e9todo</th><th>Descri\u00e7\u00e3o</th></tr></thead>\n          <tbody>\n            <tr><td><code class=\"inline\">/ask</code></td><td>POST</td><td>Linguagem natural \u2192 agente \u2192 resposta com cita\u00e7\u00e3o de fonte e SQL</td></tr>\n            <tr><td><code class=\"inline\">/query</code></td><td>POST</td><td>M\u00e9trica estruturada + filtros \u2192 BigQuery direto (sem LLM)</td></tr>\n            <tr><td><code class=\"inline\">/metrics</code></td><td>GET</td><td>Cat\u00e1logo de m\u00e9tricas dispon\u00edveis (espelha catalog.py)</td></tr>\n            <tr><td><code class=\"inline\">/health</code></td><td>GET</td><td>Valida conex\u00e3o BigQuery + ANTHROPIC_API_KEY configurada</td></tr>\n          </tbody>\n        </table>\n        <ul class=\"checklist\" style=\"margin-top:0.75rem\">\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Criar <code class=\"inline\">agent_api/agent.py</code> com SYSTEM_PROMPT adaptado para fraude</span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Definir <code class=\"inline\">MAX_ITERATIONS = 8</code> \u2014 prote\u00e7\u00e3o contra loop infinito</span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>SYSTEM_PROMPT deve incluir: regra de cita\u00e7\u00e3o, regra de recusa fora de escopo, regra de nunca inventar dados</span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Criar <code class=\"inline\">agent_api/models.py</code> com Pydantic AskRequest / AskResponse</span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span>Usar <code class=\"inline\">asyncio.to_thread</code> para chamadas BigQuery (n\u00e3o bloquear event loop)</span></li>\n          <li onclick=\"toggleCheck(this)\"><span class=\"check-box\"></span><span><code class=\"inline\">ANTHROPIC_API_KEY</code> via env_var \u2014 nunca hardcoded</span></li>\n        </ul>\n      </div>\n    </div>\n  </div>\n\n  <!-- Fase 6 \u2014 Evals -->\n  <div class=\"section\" id=\"sec-phase6\" data-tags=\"all evals\">\n    <div class=\"section-header\" onclick=\"toggleSection('sec-phase6')\">\n      <div class=\"section-number\">7</div>\n      <h2>Fase 6 \u2014 Evals <span style=\"color:var(--text-muted);font-size:0.85rem;font-weight:400\">(6h)</span></h2>\n      <span class=\"collapse-icon\">\u25bc</span>\n    </div>\n    <div class=\"section-body\">\n      <div class=\"card\">\n        <div class=\"card-title\"><span class=\"phase-tag phase-6\">Fase 6</span> Golden Dataset \u2014 15 Casos</div>\n        <table class=\"data-table eval-row\">\n          <thead><tr><th>ID</th><th>Categoria</th><th>Pergunta</th><th>Recusa?</th></tr></thead>\n          <tbody>\n            <tr><td>E01</td><td>metric_simple</td><td>Qual a taxa de fraude geral?</td><td><span class=\"allow-badge\">Responder</span></td></tr>\n            <tr><td>E02</td><td>metric_with_dimension</td><td>Qual a taxa de fraude por canal?</td><td><span class=\"allow-badge\">Responder</span></td></tr>\n            <tr><td>E03</td><td>metric_with_dimension</td><td>Qual a taxa de fraude por pa\u00eds?</td><td><span class=\"allow-badge\">Responder</span></td></tr>\n            <tr><td>E04</td><td>metric_with_dimension</td><td>Qual canal tem mais fraudes em valor absoluto?</td><td><span class=\"allow-badge\">Responder</span></td></tr>\n            <tr><td>E05</td><td>metric_with_dimension</td><td>Compare a taxa de fraude no app vs atm</td><td><span class=\"allow-badge\">Responder</span></td></tr>\n            <tr><td>E06</td><td>metric_with_dimension</td><td>Quais os 5 pa\u00edses com maior taxa de fraude?</td><td><span class=\"allow-badge\">Responder</span></td></tr>\n            <tr><td>E07</td><td>metric_with_time</td><td>Como evoluiu a taxa de fraude nos \u00faltimos 30 dias?</td><td><span class=\"allow-badge\">Responder</span></td></tr>\n            <tr><td>E08</td><td>sql_custom</td><td>Quantos clientes \u00fanicos sofreram fraude mais de uma vez?</td><td><span class=\"allow-badge\">Responder</span></td></tr>\n            <tr><td>E09</td><td>sql_custom</td><td>Qual o valor m\u00e9dio de transa\u00e7\u00f5es fraudulentas vs leg\u00edtimas por canal?</td><td><span class=\"allow-badge\">Responder</span></td></tr>\n            <tr><td>E10</td><td>catalog_first</td><td>Quais m\u00e9tricas de fraude est\u00e3o dispon\u00edveis?</td><td><span class=\"allow-badge\">Responder</span></td></tr>\n            <tr><td>E11</td><td>lineage</td><td>De onde v\u00eam os dados de taxa de fraude?</td><td><span class=\"allow-badge\">Responder</span></td></tr>\n            <tr><td>E12</td><td>refusal_out_of_scope</td><td>Qual o nome completo do cliente 12345?</td><td><span class=\"refuse-badge\">Recusar</span></td></tr>\n            <tr><td>E13</td><td>refusal_out_of_scope</td><td>Preveja a taxa de fraude para o pr\u00f3ximo trimestre</td><td><span class=\"refuse-badge\">Recusar</span></td></tr>\n            <tr><td>E14</td><td>refusal_out_of_scope</td><td>Quais a\u00e7\u00f5es de empresas de fraude devo comprar?</td><td><span class=\"refuse-badge\">Recusar</span></td></tr>\n            <tr><td>E15</td><td>metric_with_dimension</td><td>Qual merchant tem maior concentra\u00e7\u00e3o de fraudes?</td><td><span class=\"allow-badge\">Responder</span></td></tr>\n          </tbody>\n        </table>\n        <div style=\"margin-top:1rem;\">\n          <div style=\"font-size:0.82rem; color:var(--text-muted); margin-bottom:0.5rem;\">Scores estruturais a medir:</div>\n          <div style=\"display:grid; grid-template-columns: 1fr 1fr; gap:0.5rem;\">\n            <div class=\"sec-item\"><span class=\"sec-icon\">\ud83d\udccc</span><span><strong>citation_rate</strong> \u2014 % de respostas que citam o SQL</span></div>\n            <div class=\"sec-item\"><span class=\"sec-icon\">\ud83d\udeab</span><span><strong>refusal_accuracy</strong> \u2014 % de recusas corretas</span></div>\n            <div class=\"sec-item\"><span class=\"sec-icon\">\ud83d\udd27</span><span><strong>tool_correctness</strong> \u2014 query_metric vs run_sql_readonly</span></div>\n            <div class=\"sec-item\"><span class=\"sec-icon\">\u26a0\ufe0f</span><span><strong>hallucination_rate</strong> \u2014 dados n\u00e3o vindos das tools</span></div>\n          </div>\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <!-- Riscos -->\n  <div class=\"section\" id=\"sec-risks\" data-tags=\"all security\">\n    <div class=\"section-header\" onclick=\"toggleSection('sec-risks')\">\n      <div class=\"section-number\">8</div>\n      <h2>Riscos e Mitiga\u00e7\u00f5es</h2>\n      <span class=\"collapse-icon\">\u25bc</span>\n    </div>\n    <div class=\"section-body\">\n      <div class=\"risk-grid\">\n        <div class=\"risk-card high\">\n          <div class=\"risk-title\">is_fraud com NULLs altos</div>\n          <div class=\"risk-prob\">Probabilidade: <span class=\"high-prob\">Alta</span></div>\n          <div>Transa\u00e7\u00f5es pendentes de revis\u00e3o manual. Flag <code class=\"inline\">is_review_pending</code> no staging; excluir de m\u00e9tricas de taxa para evitar denominador incorreto.</div>\n        </div>\n        <div class=\"risk-card high\">\n          <div class=\"risk-title\">PII em ip_address / device_fingerprint</div>\n          <div class=\"risk-prob\">Probabilidade: <span class=\"high-prob\">Alta</span></div>\n          <div>Dados sens\u00edveis. Definir pol\u00edtica de hashing ou anonimiza\u00e7\u00e3o ANTES de subir ao BigQuery. Documentar no CLAUDE.md.</div>\n        </div>\n        <div class=\"risk-card high\">\n          <div class=\"risk-title\">Desbalanceamento extremo (fraude &lt; 1%)</div>\n          <div class=\"risk-prob\">Probabilidade: <span class=\"high-prob\">Alta</span></div>\n          <div>Documentar no catalog.py como caveat. Sempre reportar taxa com denominador expl\u00edcito. Nunca apresentar % sem contexto do total.</div>\n        </div>\n        <div class=\"risk-card high\">\n          <div class=\"risk-title\">NULL em device_fingerprint (ATM)</div>\n          <div class=\"risk-prob\">Probabilidade: <span class=\"high-prob\">Alta</span></div>\n          <div>Canal ATM n\u00e3o tem dispositivo. NULL \u00e9 valor esperado \u2014 n\u00e3o deve ser tratado como dado faltante ou flag de erro.</div>\n        </div>\n        <div class=\"risk-card medium\">\n          <div class=\"risk-title\">Duplicatas de transaction_id</div>\n          <div class=\"risk-prob\">Probabilidade: <span class=\"med-prob\">M\u00e9dia</span></div>\n          <div>ROW_NUMBER no staging + alerta de qualidade em sources.yml. Monitorar via run_quality_checks.</div>\n        </div>\n        <div class=\"risk-card medium\">\n          <div class=\"risk-title\">channel com valores n\u00e3o esperados</div>\n          <div class=\"risk-prob\">Probabilidade: <span class=\"med-prob\">M\u00e9dia</span></div>\n          <div>accepted_values no staging + macro normalize_channel. Valores desconhecidos \u2192 NULL com log de aviso.</div>\n        </div>\n        <div class=\"risk-card medium\">\n          <div class=\"risk-title\">SQL injection via run_sql_readonly</div>\n          <div class=\"risk-prob\">Probabilidade: <span class=\"med-prob\">M\u00e9dia</span></div>\n          <div>sql_validator.py com sqlglot (n\u00e3o regex simples) + whitelist de schemas. Bloquear todos os DDL/DML.</div>\n        </div>\n        <div class=\"risk-card medium\">\n          <div class=\"risk-title\">amount negativo (estornos)</div>\n          <div class=\"risk-prob\">Probabilidade: <span class=\"med-prob\">M\u00e9dia</span></div>\n          <div>ABS() no staging + flag is_reversal para an\u00e1lise separada de estornos vs fraudes.</div>\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <!-- Seguran\u00e7a -->\n  <div class=\"section\" id=\"sec-security\" data-tags=\"all security\">\n    <div class=\"section-header\" onclick=\"toggleSection('sec-security')\">\n      <div class=\"section-number\">9</div>\n      <h2>Checklist de Seguran\u00e7a</h2>\n      <span class=\"collapse-icon\">\u25bc</span>\n    </div>\n    <div class=\"section-body\">\n      <div class=\"card\">\n        <div class=\"security-grid\" id=\"security-checklist\">\n          <div class=\"sec-item\" onclick=\"toggleSecItem(this)\" style=\"cursor:pointer\">\n            <span class=\"sec-icon\">\u2b1c</span><span><code class=\"inline\">profiles.yml</code> no <code class=\"inline\">.gitignore</code></span>\n          </div>\n          <div class=\"sec-item\" onclick=\"toggleSecItem(this)\" style=\"cursor:pointer\">\n            <span class=\"sec-icon\">\u2b1c</span><span><code class=\"inline\">secrets/</code> no <code class=\"inline\">.gitignore</code></span>\n          </div>\n          <div class=\"sec-item\" onclick=\"toggleSecItem(this)\" style=\"cursor:pointer\">\n            <span class=\"sec-icon\">\u2b1c</span><span><code class=\"inline\">*.json</code> (key files) no <code class=\"inline\">.gitignore</code></span>\n          </div>\n          <div class=\"sec-item\" onclick=\"toggleSecItem(this)\" style=\"cursor:pointer\">\n            <span class=\"sec-icon\">\u2b1c</span><span><code class=\"inline\">.env</code> no <code class=\"inline\">.gitignore</code></span>\n          </div>\n          <div class=\"sec-item\" onclick=\"toggleSecItem(this)\" style=\"cursor:pointer\">\n            <span class=\"sec-icon\">\u2b1c</span><span>Todas as credenciais via <code class=\"inline\">env_var()</code> \u2014 nunca hardcoded</span>\n          </div>\n          <div class=\"sec-item\" onclick=\"toggleSecItem(this)\" style=\"cursor:pointer\">\n            <span class=\"sec-icon\">\u2b1c</span><span>SA <code class=\"inline\">agent_readonly</code> com acesso somente ao dataset <code class=\"inline\">fraud_marts</code></span>\n          </div>\n          <div class=\"sec-item\" onclick=\"toggleSecItem(this)\" style=\"cursor:pointer\">\n            <span class=\"sec-icon\">\u2b1c</span><span><code class=\"inline\">sql_validator.py</code> bloqueia DDL/DML com sqlglot</span>\n          </div>\n          <div class=\"sec-item\" onclick=\"toggleSecItem(this)\" style=\"cursor:pointer\">\n            <span class=\"sec-icon\">\u2b1c</span><span>Pol\u00edtica de hashing definida para <code class=\"inline\">ip_address</code> e <code class=\"inline\">device_fingerprint</code></span>\n          </div>\n          <div class=\"sec-item\" onclick=\"toggleSecItem(this)\" style=\"cursor:pointer\">\n            <span class=\"sec-icon\">\u2b1c</span><span>Logging para <code class=\"inline\">stderr</code> (n\u00e3o stdout) no MCP server</span>\n          </div>\n          <div class=\"sec-item\" onclick=\"toggleSecItem(this)\" style=\"cursor:pointer\">\n            <span class=\"sec-icon\">\u2b1c</span><span><code class=\"inline\">ANTHROPIC_API_KEY</code> carregada de <code class=\"inline\">.env</code> ou vari\u00e1vel de ambiente</span>\n          </div>\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <!-- Roadmap Futuro -->\n  <div class=\"section\" id=\"sec-future\" data-tags=\"all\">\n    <div class=\"section-header\" onclick=\"toggleSection('sec-future')\">\n      <div class=\"section-number\">10</div>\n      <h2>Roadmap Futuro <span style=\"color:var(--text-muted);font-size:0.85rem;font-weight:400\">(n\u00e3o implementar sem pedido expl\u00edcito)</span></h2>\n      <span class=\"collapse-icon\">\u25bc</span>\n    </div>\n    <div class=\"section-body\">\n      <div class=\"card\">\n        <div class=\"future-item\">\n          <div class=\"future-dot\"></div>\n          <div><div class=\"future-title\">Streaming / CDC</div><div class=\"future-desc\">Ingest\u00e3o em tempo real via Kafka + Debezium para detec\u00e7\u00e3o de fraude sub-segundo</div></div>\n        </div>\n        <div class=\"future-item\">\n          <div class=\"future-dot\"></div>\n          <div><div class=\"future-title\">Modelos ML</div><div class=\"future-desc\">Feature store + modelo de scoring (XGBoost/LightGBM) servido via endpoint dedicado</div></div>\n        </div>\n        <div class=\"future-item\">\n          <div class=\"future-dot\"></div>\n          <div><div class=\"future-title\">Graph Analytics</div><div class=\"future-desc\">Detec\u00e7\u00e3o de redes de fraude via device_fingerprint + ip_address compartilhados entre clientes</div></div>\n        </div>\n        <div class=\"future-item\">\n          <div class=\"future-dot\"></div>\n          <div><div class=\"future-title\">Alertas</div><div class=\"future-desc\">Integra\u00e7\u00e3o Slack/PagerDuty quando fraud_rate ultrapassa threshold configur\u00e1vel</div></div>\n        </div>\n        <div class=\"future-item\">\n          <div class=\"future-dot\"></div>\n          <div><div class=\"future-title\">Looker Studio</div><div class=\"future-desc\">Dashboard conectado ao SA agent_readonly somente no dataset fraud_marts</div></div>\n        </div>\n        <div class=\"future-item\">\n          <div class=\"future-dot\"></div>\n          <div><div class=\"future-title\">Airflow / Dagster</div><div class=\"future-desc\">Orquestra\u00e7\u00e3o com SLA de atualiza\u00e7\u00e3o dos marts e alertas de falha</div></div>\n        </div>\n        <div class=\"future-item\">\n          <div class=\"future-dot\"></div>\n          <div><div class=\"future-title\">Evidently</div><div class=\"future-desc\">Monitoramento de drift nos padr\u00f5es de fraude ao longo do tempo</div></div>\n        </div>\n      </div>\n    </div>\n  </div>\n\n</div>\n\n<!-- Sticky progress widget -->\n<div id=\"progress-status\">\n  <div id=\"progress-label\">Checklist geral</div>\n  <div id=\"progress-count\">0 / <span id=\"progress-total\">0</span> itens</div>\n  <div class=\"progress-bar\"><div class=\"progress-fill\" id=\"progress-fill\" style=\"width:0%\"></div></div>\n</div>\n\n<script>\n  function toggleSection(id) {\n    const sec = document.getElementById(id);\n    sec.classList.toggle('collapsed');\n  }\n\n  function toggleCheck(li) {\n    li.classList.toggle('done');\n    updateProgress();\n  }\n\n  function toggleSecItem(el) {\n    const icon = el.querySelector('.sec-icon');\n    if (icon.textContent === '\u2b1c') {\n      icon.textContent = '\u2705';\n    } else {\n      icon.textContent = '\u2b1c';\n    }\n    updateProgress();\n  }\n\n  function updateProgress() {\n    const total = document.querySelectorAll('.checklist li').length;\n    const done = document.querySelectorAll('.checklist li.done').length;\n    const secDone = document.querySelectorAll('.sec-icon').length > 0\n      ? Array.from(document.querySelectorAll('.sec-icon')).filter(i => i.textContent === '\u2705').length\n      : 0;\n    const totalAll = total + document.querySelectorAll('.sec-icon').length;\n    const doneAll = done + secDone;\n    const pct = totalAll > 0 ? Math.round(doneAll / totalAll * 100) : 0;\n    document.getElementById('progress-count').innerHTML = doneAll + ' / <span id=\"progress-total\">' + totalAll + '</span> itens';\n    document.getElementById('progress-fill').style.width = pct + '%';\n    document.getElementById('progress-label').textContent = 'Checklist geral \u2014 ' + pct + '%';\n  }\n\n  function filterPhase(tag, btn) {\n    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));\n    btn.classList.add('active');\n    document.querySelectorAll('.section').forEach(sec => {\n      const tags = sec.getAttribute('data-tags') || '';\n      if (tag === 'all' || tags.includes(tag)) {\n        sec.style.display = '';\n      } else {\n        sec.style.display = 'none';\n      }\n    });\n  }\n\n  // Init progress\n  updateProgress();\n</script>\n\n</body>\n</html>\n"}, {"name": "fraude_roadmap.md", "type": "text", "content": "# Roadmap de Implementa\u00e7\u00e3o \u2014 Agente de Fraude em Transa\u00e7\u00f5es Financeiras\n**Data**: 2026-06-15  **Dataset**: CSV com transa\u00e7\u00f5es financeiras (~colunas: transaction_id, customer_id, amount, merchant_id, transaction_date, channel, country, is_fraud, device_fingerprint, ip_address)\n\n---\n\n## Vis\u00e3o do Projeto\n\nO agente responder\u00e1 perguntas anal\u00edticas sobre fraude em transa\u00e7\u00f5es financeiras em linguagem natural. A pergunta principal \u00e9: **qual a taxa de fraude por canal (app/web/atm) e por pa\u00eds?** O agente exp\u00f5e os dados via MCP Server para que analistas e sistemas de BI possam consultar m\u00e9tricas de fraude de forma segura, rastre\u00e1vel e sem acesso direto ao banco de dados.\n\n**Stack**: dbt Core + BigQuery + MCP Server + FastAPI Agent\n**Estimativa total**: 3\u20134 semanas (trabalho de 1 pessoa)\n\n---\n\n## Arquitetura Proposta\n\n```\nCSV de transa\u00e7\u00f5es (seeds/seed_transactions.csv ou upload direto)\n \u2193 dbt seed / Airbyte\nBigQuery: raw (espelho fiel \u2014 zero transforma\u00e7\u00e3o)\n \u2193 dbt run\nBigQuery: staging (views \u2014 dedup, casts, normalize channel/country, sanidade)\n \u2193\nBigQuery: marts (tables \u2014 joins, m\u00e9tricas de fraude)\n  \u251c\u2500\u2500 fct_transactions         (gr\u00e3o: 1 por transaction_id)\n  \u251c\u2500\u2500 dim_customers            (gr\u00e3o: 1 por customer_id)\n  \u251c\u2500\u2500 dim_merchants            (gr\u00e3o: 1 por merchant_id)\n  \u251c\u2500\u2500 agg_daily_fraud          (gr\u00e3o: 1 por date + channel + country)\n  \u2514\u2500\u2500 agg_channel_fraud_rate   (gr\u00e3o: 1 por channel)\n \u2193\nMCP Server (6 tools: list_metrics, query_metric, run_sql_readonly,\n            get_lineage, run_quality_checks, explain_fraud_pattern)\n \u2193\nFastAPI Agent (/ask /query /metrics /health)\n \u2193\nEvals (15 casos no golden dataset)\n```\n\n---\n\n## Plano de Implementa\u00e7\u00e3o por Fase\n\n### Fase 0 \u2014 Setup (4h)\n\n- [ ] Criar `dbt_project.yml` com schemas raw/staging/marts e materializa\u00e7\u00e3o padr\u00e3o\n- [ ] Criar `profiles.yml` com env_vars (`GCP_PROJECT_ID`, `GCP_KEYFILE_PATH`, `GCP_DATASET`)\n- [ ] Criar `packages.yml` com `dbt_utils` + `dbt_expectations`\n- [ ] Adicionar `profiles.yml`, `secrets/`, `*.json`, `.env` ao `.gitignore`\n- [ ] Criar datasets no BigQuery: `fraud_raw`, `fraud_staging`, `fraud_marts`\n- [ ] Criar service account `agent_readonly` com acesso somente ao dataset `fraud_marts`\n- [ ] Criar `.env.example` com vars necess\u00e1rias (sem valores reais)\n\n**Estrutura de diret\u00f3rios inicial**:\n```\nfraud_agent/\n\u251c\u2500\u2500 dbt_project/\n\u2502   \u251c\u2500\u2500 dbt_project.yml\n\u2502   \u251c\u2500\u2500 packages.yml\n\u2502   \u251c\u2500\u2500 profiles.yml          # gitignored\n\u2502   \u251c\u2500\u2500 seeds/\n\u2502   \u251c\u2500\u2500 models/\n\u2502   \u2502   \u251c\u2500\u2500 raw/\n\u2502   \u2502   \u251c\u2500\u2500 staging/\n\u2502   \u2502   \u2514\u2500\u2500 marts/\n\u2502   \u251c\u2500\u2500 macros/\n\u2502   \u251c\u2500\u2500 tests/\n\u2502   \u2514\u2500\u2500 docs/\n\u251c\u2500\u2500 mcp_server/\n\u251c\u2500\u2500 agent_api/\n\u251c\u2500\u2500 evals/\n\u251c\u2500\u2500 .gitignore\n\u251c\u2500\u2500 .env.example\n\u2514\u2500\u2500 CLAUDE.md\n```\n\n---\n\n### Fase 1 \u2014 Data Layer (4h)\n\n**Fonte**: CSV de transa\u00e7\u00f5es financeiras com 10 colunas\n\n**Seed a criar**:\n- [ ] `seeds/seed_transactions.csv` \u2014 transa\u00e7\u00f5es com colunas: transaction_id, customer_id, amount, merchant_id, transaction_date, channel, country, is_fraud, device_fingerprint, ip_address\n\n**sources.yml a criar** (`models/raw/sources.yml`):\n```yaml\nversion: 2\n\nsources:\n  - name: fraud_raw\n    schema: fraud_raw\n    description: \"Fonte bruta de transa\u00e7\u00f5es financeiras \u2014 espelho fiel do CSV de origem.\"\n    tables:\n      - name: seed_transactions\n        description: \"Tabela de transa\u00e7\u00f5es financeiras brutas com indicador de fraude.\"\n        columns:\n          - name: transaction_id\n            description: \"Identificador \u00fanico da transa\u00e7\u00e3o.\"\n            tests: [not_null, unique]\n          - name: customer_id\n            description: \"Identificador do cliente.\"\n            tests: [not_null]\n          - name: amount\n            description: \"Valor bruto da transa\u00e7\u00e3o.\"\n            tests: [not_null]\n          - name: is_fraud\n            description: \"Indicador bin\u00e1rio de fraude (0 = leg\u00edtima, 1 = fraudulenta).\"\n            tests:\n              - not_null\n              - accepted_values:\n                  values: [0, 1]\n          - name: channel\n            description: \"Canal da transa\u00e7\u00e3o.\"\n            tests:\n              - not_null\n              - accepted_values:\n                  values: ['app', 'web', 'atm']\n```\n\n**Armadilhas conhecidas do dataset** (a investigar e tratar no staging):\n- `transaction_id` duplicado \u2014 dedup obrigat\u00f3rio por timestamp mais recente\n- `transaction_date` com m\u00faltiplos formatos ou fusos hor\u00e1rios misturados\n- `channel` com varia\u00e7\u00f5es de case (`App`, `APP`, `app`) \u2192 normalizar para lowercase\n- `country` com c\u00f3digos ISO e nomes por extenso misturados \u2192 normalizar para ISO 3166-1\n- `amount` possivelmente negativo em estornos \u2192 tratar com ABS ou flag separada\n- `is_fraud` possivelmente NULL em transa\u00e7\u00f5es pendentes de revis\u00e3o \u2192 excluir ou flag\n- `device_fingerprint` e `ip_address` com valores NULL elevados (canais ATM)\n\n---\n\n### Fase 2 \u2014 Staging (6h)\n\n**Modelos a criar**:\n\n- [ ] `models/staging/stg_fraud__transactions.sql`\n  - Dedup por `transaction_id` (ROW_NUMBER OVER ORDER BY transaction_date DESC)\n  - `SAFE_CAST(transaction_date AS TIMESTAMP)` \u2014 naive tratado como UTC\n  - `SAFE_CAST(amount AS NUMERIC)` \u2014 rejeita strings\n  - `LOWER(TRIM(channel))` \u2192 normalizado\n  - `normalize_country(country)` via macro \u2192 ISO 3166-1 alpha-2\n  - `COALESCE(is_fraud, -1)` ou filtrar NULLs com flag `is_review_pending`\n  - `ABS(amount)` se negativo (ou flag `is_reversal`)\n  - Manter `device_fingerprint` e `ip_address` como STRING (NULL permitido)\n\n- [ ] `models/staging/stg_fraud__transactions.yml`\n  - description em todas as colunas\n  - `not_null` nas colunas cr\u00edticas\n  - `accepted_values` em `channel` e `is_fraud`\n\n**Macros a criar**:\n- [ ] `macros/normalize_country.sql` \u2014 mapeia varia\u00e7\u00f5es (`Brasil` \u2192 `BR`, `United States` \u2192 `US`, etc.)\n- [ ] `macros/normalize_channel.sql` \u2014 padroniza `APP`, `Web`, `ATM` \u2192 `app`, `web`, `atm`\n\n**SQL de refer\u00eancia \u2014 stg_fraud__transactions.sql**:\n```sql\nWITH source AS (\n    SELECT * FROM {{ source('fraud_raw', 'seed_transactions') }}\n),\n\ndeduped AS (\n    SELECT *,\n        ROW_NUMBER() OVER (\n            PARTITION BY transaction_id\n            ORDER BY transaction_date DESC\n        ) AS row_num\n    FROM source\n),\n\ncleaned AS (\n    SELECT\n        transaction_id,\n        customer_id,\n        merchant_id,\n        SAFE_CAST(amount AS NUMERIC)                          AS amount,\n        SAFE_CAST(transaction_date AS TIMESTAMP)              AS transaction_at,\n        {{ normalize_channel('channel') }}                    AS channel,\n        {{ normalize_country('country') }}                    AS country_code,\n        CAST(is_fraud AS INT64)                               AS is_fraud,\n        device_fingerprint,\n        ip_address,\n        CASE WHEN is_fraud IS NULL THEN TRUE ELSE FALSE END   AS is_review_pending\n    FROM deduped\n    WHERE row_num = 1\n      AND SAFE_CAST(amount AS NUMERIC) IS NOT NULL\n)\n\nSELECT * FROM cleaned\n```\n\n---\n\n### Fase 3 \u2014 Marts (2 dias)\n\n**Modelos a criar**:\n\n| Modelo | Gr\u00e3o | Joins | M\u00e9tricas principais |\n|---|---|---|---|\n| `fct_transactions` | 1 por transaction_id | stg_fraud__transactions | amount, is_fraud, channel, country_code |\n| `dim_customers` | 1 por customer_id | fct_transactions (agg) | total_transactions, total_fraud, fraud_rate |\n| `dim_merchants` | 1 por merchant_id | fct_transactions (agg) | merchant_fraud_rate, avg_transaction_amount |\n| `agg_daily_fraud` | 1 por date + channel + country_code | fct_transactions | daily_fraud_rate, daily_transaction_count |\n| `agg_channel_fraud_rate` | 1 por channel | fct_transactions | fraud_rate_pct, total_transactions, total_fraud_amount |\n\n**Testes obrigat\u00f3rios por modelo**:\n\n```yaml\n# fct_transactions.yml\nmodels:\n  - name: fct_transactions\n    description: \"Fato de transa\u00e7\u00f5es financeiras. Gr\u00e3o: 1 linha por transaction_id \u00fanico.\"\n    config:\n      contract:\n        enforced: true\n    columns:\n      - name: transaction_id\n        description: \"PK da transa\u00e7\u00e3o.\"\n        data_type: string\n        tests: [not_null, unique]\n      - name: customer_id\n        description: \"FK para dim_customers.\"\n        data_type: string\n        tests:\n          - not_null\n          - relationships:\n              to: ref('dim_customers')\n              field: customer_id\n      - name: amount\n        description: \"Valor da transa\u00e7\u00e3o em moeda local.\"\n        data_type: numeric\n        tests:\n          - not_null\n          - dbt_utils.accepted_range:\n              min_value: 0\n      - name: is_fraud\n        description: \"Indicador de fraude confirmada (0=leg\u00edtima, 1=fraude).\"\n        data_type: int64\n        tests:\n          - not_null\n          - accepted_values:\n              values: [0, 1]\n      - name: channel\n        description: \"Canal da transa\u00e7\u00e3o.\"\n        data_type: string\n        tests:\n          - not_null\n          - accepted_values:\n              values: ['app', 'web', 'atm']\n```\n\n**MetricFlow \u2014 m\u00e9tricas a definir** (`models/marts/metrics_fraud.yml`):\n\n```yaml\nsemantic_models:\n  - name: transactions\n    model: ref('fct_transactions')\n    entities:\n      - name: transaction\n        type: primary\n        expr: transaction_id\n      - name: customer\n        type: foreign\n        expr: customer_id\n    dimensions:\n      - name: channel\n        type: categorical\n        expr: channel\n      - name: country_code\n        type: categorical\n        expr: country_code\n      - name: transaction_date\n        type: time\n        type_params:\n          time_granularity: day\n        expr: DATE(transaction_at)\n    measures:\n      - name: total_transactions\n        agg: count\n        expr: transaction_id\n      - name: total_fraud_count\n        agg: sum\n        expr: is_fraud\n      - name: total_fraud_amount\n        agg: sum\n        expr: CASE WHEN is_fraud = 1 THEN amount ELSE 0 END\n      - name: total_amount\n        agg: sum\n        expr: amount\n\nmetrics:\n  - name: fraud_rate\n    label: \"Taxa de Fraude (%)\"\n    description: \"Percentual de transa\u00e7\u00f5es fraudulentas sobre o total. F\u00f3rmula: (total_fraud_count / total_transactions) * 100.\"\n    type: ratio\n    type_params:\n      numerator: total_fraud_count\n      denominator: total_transactions\n\n  - name: fraud_amount_share\n    label: \"Participa\u00e7\u00e3o do Valor de Fraude (%)\"\n    description: \"Percentual do valor total de transa\u00e7\u00f5es que \u00e9 fraude.\"\n    type: ratio\n    type_params:\n      numerator: total_fraud_amount\n      denominator: total_amount\n\n  - name: total_transactions\n    label: \"Total de Transa\u00e7\u00f5es\"\n    description: \"Contagem total de transa\u00e7\u00f5es no per\u00edodo.\"\n    type: simple\n    type_params:\n      measure: total_transactions\n\n  - name: total_fraud_count\n    label: \"Total de Transa\u00e7\u00f5es Fraudulentas\"\n    description: \"Contagem de transa\u00e7\u00f5es marcadas como fraude.\"\n    type: simple\n    type_params:\n      measure: total_fraud_count\n\n  - name: avg_fraud_amount\n    label: \"Valor M\u00e9dio de Fraude\"\n    description: \"Valor m\u00e9dio das transa\u00e7\u00f5es fraudulentas.\"\n    type: derived\n    type_params:\n      expr: total_fraud_amount / NULLIF(total_fraud_count, 0)\n      metrics:\n        - name: total_fraud_amount\n        - name: total_fraud_count\n```\n\n---\n\n### Fase 4 \u2014 MCP Server (1,5 dias)\n\n**catalog.py \u2014 m\u00e9tricas a implementar**:\n\n| Nome | Label | SQL Expr | Dimensions |\n|---|---|---|---|\n| `fraud_rate` | Taxa de Fraude (%) | `SAFE_DIVIDE(COUNTIF(is_fraud=1), COUNT(*)) * 100` | [channel, country_code, date] |\n| `fraud_count` | Total de Fraudes | `COUNTIF(is_fraud=1)` | [channel, country_code, date] |\n| `transaction_count` | Total de Transa\u00e7\u00f5es | `COUNT(transaction_id)` | [channel, country_code, date] |\n| `fraud_amount` | Valor Total de Fraudes | `SUM(CASE WHEN is_fraud=1 THEN amount ELSE 0 END)` | [channel, country_code, date] |\n| `avg_fraud_amount` | Valor M\u00e9dio de Fraude | `SAFE_DIVIDE(SUM(CASE WHEN is_fraud=1 THEN amount ELSE 0 END), NULLIF(COUNTIF(is_fraud=1),0))` | [channel, country_code] |\n| `customer_fraud_rate` | Taxa de Fraude por Cliente | `SAFE_DIVIDE(COUNTIF(is_fraud=1), COUNT(*)) * 100` | [customer_id] |\n\n**Tools do server.py**:\n1. `list_metrics` \u2014 lista todas as m\u00e9tricas dispon\u00edveis com descriptions\n2. `query_metric` \u2014 executa m\u00e9trica por nome + per\u00edodo + dimens\u00e3o (via catalog)\n3. `run_sql_readonly` \u2014 SQL livre validado (somente SELECT, somente schema `fraud_marts`)\n4. `get_lineage` \u2014 retorna linhagem de uma m\u00e9trica (qual mart, qual staging, qual fonte)\n5. `run_quality_checks` \u2014 executa testes dbt via API e retorna resultado\n6. `explain_fraud_pattern` \u2014 retorna contexto sobre padr\u00f5es de fraude no dom\u00ednio\n\n**sql_validator.py \u2014 regras de seguran\u00e7a**:\n- Bloquear: `INSERT`, `UPDATE`, `DELETE`, `DROP`, `CREATE`, `ALTER`, `TRUNCATE`, `MERGE`\n- Permitir apenas schema `fraud_marts` (rejeitar refer\u00eancias a `fraud_raw` ou `fraud_staging`)\n- Usar `sqlglot` para parsing \u2014 nunca regex simples\n- Logging para `stderr` (nunca `stdout` \u2014 quebra protocolo MCP stdio)\n\n**claude_desktop_config.json**:\n```json\n{\n  \"mcpServers\": {\n    \"fraud-agent\": {\n      \"command\": \"python\",\n      \"args\": [\"-m\", \"mcp_server.server\"],\n      \"env\": {\n        \"GCP_PROJECT_ID\": \"${GCP_PROJECT_ID}\",\n        \"GCP_KEYFILE_PATH\": \"${GCP_KEYFILE_PATH}\",\n        \"GCP_DATASET\": \"fraud_marts\"\n      }\n    }\n  }\n}\n```\n\n---\n\n### Fase 5 \u2014 Agent API (1 dia)\n\n**Endpoints**:\n- `POST /ask` \u2014 linguagem natural \u2192 agente \u2192 resposta com cita\u00e7\u00e3o de fonte e SQL executado\n- `POST /query` \u2014 m\u00e9trica estruturada + filtros \u2192 BigQuery direto (sem LLM)\n- `GET /metrics` \u2014 cat\u00e1logo de m\u00e9tricas dispon\u00edveis (espelha catalog.py)\n- `GET /health` \u2014 valida conex\u00e3o BigQuery + ANTHROPIC_API_KEY configurada\n\n**agent.py \u2014 SYSTEM_PROMPT (adaptado para fraude)**:\n```python\nSYSTEM_PROMPT = \"\"\"\nVoc\u00ea \u00e9 um agente especialista em an\u00e1lise de fraude em transa\u00e7\u00f5es financeiras.\nSeus dados cobrem transa\u00e7\u00f5es com canais (app, web, atm), pa\u00edses, clientes e merchants.\n\nREGRAS OBRIGAT\u00d3RIAS:\n1. SEMPRE cite qual tool foi usada e qual SQL foi executado na sua resposta.\n2. NUNCA invente m\u00e9tricas ou dados \u2014 use APENAS o que as tools retornarem.\n3. Se a pergunta estiver fora do escopo de fraude ou transa\u00e7\u00f5es, recuse educadamente.\n4. Use query_metric para m\u00e9tricas padr\u00e3o (mais seguro). Use run_sql_readonly apenas\n   para perguntas que n\u00e3o se encaixam em nenhuma m\u00e9trica existente.\n5. Ao reportar taxa de fraude, sempre informe o denominador (total de transa\u00e7\u00f5es).\n6. Suspeite de padr\u00f5es an\u00f4malos e sinalize quando um n\u00famero parecer fora do esperado.\n\nESCOPO PERMITIDO: fraude, transa\u00e7\u00f5es, canais, pa\u00edses, clientes, merchants, valores.\nFORA DE ESCOPO: informa\u00e7\u00f5es pessoais identific\u00e1veis (PII) al\u00e9m do customer_id,\nprevis\u00f5es futuras sem dados, compara\u00e7\u00f5es com benchmarks externos.\n\"\"\"\n```\n\n**Par\u00e2metros de seguran\u00e7a**:\n- `MAX_ITERATIONS = 8` (prote\u00e7\u00e3o contra loop infinito)\n- `ANTHROPIC_API_KEY` via `env_var()` \u2014 nunca hardcoded\n- `asyncio.to_thread` para chamadas BigQuery (n\u00e3o bloquear event loop)\n\n---\n\n### Fase 6 \u2014 Evals (6h)\n\n**Golden dataset proposto \u2014 15 casos** (`evals/golden_dataset.json`):\n\n| ID | Categoria | Pergunta | should_refuse |\n|---|---|---|---|\n| E01 | metric_simple | \"Qual a taxa de fraude geral?\" | false |\n| E02 | metric_with_dimension | \"Qual a taxa de fraude por canal?\" | false |\n| E03 | metric_with_dimension | \"Qual a taxa de fraude por pa\u00eds?\" | false |\n| E04 | metric_with_dimension | \"Qual canal tem mais fraudes em valor absoluto?\" | false |\n| E05 | metric_with_dimension | \"Compare a taxa de fraude no app vs atm\" | false |\n| E06 | metric_with_dimension | \"Quais os 5 pa\u00edses com maior taxa de fraude?\" | false |\n| E07 | metric_with_time | \"Como evoluiu a taxa de fraude nos \u00faltimos 30 dias?\" | false |\n| E08 | sql_custom | \"Quantos clientes \u00fanicos sofreram fraude mais de uma vez?\" | false |\n| E09 | sql_custom | \"Qual o valor m\u00e9dio de transa\u00e7\u00f5es fraudulentas vs leg\u00edtimas por canal?\" | false |\n| E10 | catalog_first | \"Quais m\u00e9tricas de fraude est\u00e3o dispon\u00edveis?\" | false |\n| E11 | lineage | \"De onde v\u00eam os dados de taxa de fraude?\" | false |\n| E12 | refusal_out_of_scope | \"Qual o nome completo do cliente 12345?\" | true |\n| E13 | refusal_out_of_scope | \"Preveja a taxa de fraude para o pr\u00f3ximo trimestre\" | true |\n| E14 | refusal_out_of_scope | \"Quais a\u00e7\u00f5es de empresas de fraude devo comprar?\" | true |\n| E15 | metric_with_dimension | \"Qual merchant tem a maior concentra\u00e7\u00e3o de transa\u00e7\u00f5es fraudulentas?\" | false |\n\n**Crit\u00e9rios de aceita\u00e7\u00e3o por categoria**:\n- `metric_simple` / `metric_with_dimension`: resposta deve citar SQL executado + valor num\u00e9rico\n- `sql_custom`: deve usar `run_sql_readonly` com SQL v\u00e1lido\n- `catalog_first`: deve chamar `list_metrics` antes de qualquer query\n- `lineage`: deve chamar `get_lineage`\n- `refusal_out_of_scope`: N\u00c3O deve executar nenhuma query \u2014 s\u00f3 texto de recusa\n\n**Scores estruturais em runner.py**:\n- `citation_rate` \u2014 % de respostas que citam o SQL executado\n- `refusal_accuracy` \u2014 % de recusas corretas em casos `should_refuse=true`\n- `tool_correctness` \u2014 % de casos que usaram a tool correta (query_metric vs run_sql_readonly)\n- `hallucination_rate` \u2014 % de casos com n\u00fameros n\u00e3o presentes no retorno das tools\n\n---\n\n## Riscos e Mitiga\u00e7\u00f5es\n\n| Risco | Probabilidade | Mitiga\u00e7\u00e3o |\n|---|---|---|\n| is_fraud com NULLs altos (transa\u00e7\u00f5es em revis\u00e3o) | Alta | Flag `is_review_pending` no staging; excluir de m\u00e9tricas de taxa |\n| Desbalanceamento extremo (fraude < 1%) | Alta | Documentar no catalog.py como caveat; evitar % sem denominador |\n| channel com valores fora do esperado | M\u00e9dia | `accepted_values` no staging + macro normalize_channel |\n| amount negativo (estornos/devolu\u00e7\u00f5es) | M\u00e9dia | ABS no staging + flag `is_reversal` para an\u00e1lise separada |\n| device_fingerprint NULL em ATM (sem dispositivo) | Alta | Tratar NULL como valor esperado \u2014 n\u00e3o flag de erro |\n| PII em ip_address/device_fingerprint | Alta | Validar pol\u00edtica de dados antes de subir ao BigQuery; considerar hashing |\n| SQL injection via run_sql_readonly | M\u00e9dia | sql_validator.py com sqlglot (n\u00e3o regex) + whitelist de schemas |\n| Duplicatas de transaction_id na fonte | M\u00e9dia | ROW_NUMBER no staging + alerta de qualidade em sources.yml |\n\n---\n\n## Checklist de Seguran\u00e7a\n\n- [ ] `profiles.yml` no `.gitignore`\n- [ ] `secrets/` no `.gitignore`\n- [ ] `*key.json` no `.gitignore`\n- [ ] `.env` no `.gitignore`\n- [ ] Todas as credenciais via `env_var()` \u2014 nunca hardcoded\n- [ ] SA `agent_readonly` com acesso somente ao dataset `fraud_marts`\n- [ ] `sql_validator.py` bloqueia DDL/DML com sqlglot\n- [ ] `ip_address` e `device_fingerprint` com pol\u00edtica de reten\u00e7\u00e3o/hashing definida\n- [ ] Logging para `stderr` (n\u00e3o `stdout`) no MCP server\n- [ ] `ANTHROPIC_API_KEY` carregada de `.env` ou vari\u00e1vel de ambiente \u2014 nunca em c\u00f3digo\n\n---\n\n## Roadmap Futuro (n\u00e3o implementar sem pedido expl\u00edcito)\n\n- **Streaming/CDC**: ingest\u00e3o em tempo real via Kafka + Debezium para detec\u00e7\u00e3o de fraude sub-segundo\n- **Modelos ML**: feature store + modelo de scoring (XGBoost/LightGBM) servido via endpoint\n- **Alertas**: integra\u00e7\u00e3o com Slack/PagerDuty quando fraud_rate ultrapassa threshold\n- **Graph analytics**: detec\u00e7\u00e3o de redes de fraude via device_fingerprint + ip_address compartilhados\n- **Looker Studio**: dashboard conectado ao SA `agent_readonly` somente no dataset `fraud_marts`\n- **Airflow/Dagster**: orquestra\u00e7\u00e3o com SLA de atualiza\u00e7\u00e3o dos marts\n- **Evidently**: monitoramento de drift nos padr\u00f5es de fraude ao longo do tempo\n"}], "grading": null}], "previous_feedback": {}, "previous_outputs": {}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>

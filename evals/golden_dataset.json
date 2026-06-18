@@ -1,0 +1,221 @@
+[
+  {
+    "id": "E01",
+    "category": "metric_simple",
+    "question": "Qual a receita entregue total no último ano?",
+    "expected_tools": ["query_metric"],
+    "expected_metric": "delivered_revenue",
+    "expected_period": "last_365d",
+    "must_cite_source": true,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Resposta contém um valor monetário em BRL",
+      "Menciona que é receita de pedidos entregues (status entregue)",
+      "Cita a ferramenta ou SQL usado como fonte"
+    ]
+  },
+  {
+    "id": "E02",
+    "category": "metric_with_dimension",
+    "question": "Qual a receita entregue por canal nos últimos 90 dias?",
+    "expected_tools": ["query_metric"],
+    "expected_metric": "delivered_revenue",
+    "expected_dimensions": ["channel"],
+    "expected_period": "last_90d",
+    "must_cite_source": true,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Resposta lista múltiplos canais (app_ios, app_android, web_desktop, web_mobile, marketplace)",
+      "Cada canal tem um valor de receita associado",
+      "Cita fonte com SQL ou ferramenta usada"
+    ]
+  },
+  {
+    "id": "E03",
+    "category": "metric_with_dimension",
+    "question": "Qual o ticket médio por categoria de produto no último trimestre?",
+    "expected_tools": ["query_metric"],
+    "expected_metric": "avg_order_value",
+    "expected_dimensions": ["product_category"],
+    "expected_period": "last_90d",
+    "must_cite_source": true,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Resposta apresenta valores de ticket médio por categoria",
+      "Unidade mencionada é BRL ou R$",
+      "Cita fonte"
+    ]
+  },
+  {
+    "id": "E04",
+    "category": "metric_comparison",
+    "question": "Compare a receita líquida com a receita bruta nos últimos 30 dias. Qual a diferença percentual?",
+    "expected_tools": ["query_metric"],
+    "must_cite_source": true,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Resposta menciona tanto receita líquida quanto bruta com valores",
+      "Calcula ou menciona a diferença entre as duas",
+      "Explica que a diferença representa devoluções",
+      "Cita fonte"
+    ]
+  },
+  {
+    "id": "E05",
+    "category": "metric_simple",
+    "question": "Qual a taxa de devolução geral dos pedidos?",
+    "expected_tools": ["query_metric"],
+    "expected_metric": "return_rate",
+    "must_cite_source": true,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Resposta contém um valor percentual",
+      "Menciona que é a proporção de pedidos com devolução",
+      "Cita fonte"
+    ]
+  },
+  {
+    "id": "E06",
+    "category": "metric_with_dimension",
+    "question": "Quais os 5 estados com maior receita entregue no último ano?",
+    "expected_tools": ["query_metric"],
+    "expected_metric": "delivered_revenue",
+    "expected_dimensions": ["customer_state"],
+    "must_cite_source": true,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Resposta lista estados brasileiros (siglas como SP, RJ, MG etc)",
+      "Apresenta valores de receita por estado",
+      "Ordena do maior para menor ou menciona os top 5",
+      "Cita fonte"
+    ]
+  },
+  {
+    "id": "E07",
+    "category": "catalog_first",
+    "question": "Qual a diferença entre receita entregue, receita bruta e receita líquida? Qual devo usar para medir performance comercial?",
+    "expected_tools": ["list_metrics"],
+    "must_cite_source": false,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Explica que receita entregue = apenas status entregue",
+      "Explica que receita bruta inclui pedidos em trânsito (aprovado, enviado)",
+      "Explica que receita líquida = bruta - devoluções",
+      "Recomenda delivered_revenue para performance canônica"
+    ]
+  },
+  {
+    "id": "E08",
+    "category": "sql_custom",
+    "question": "Quantos clientes únicos compraram mais de uma vez nos últimos 90 dias?",
+    "expected_tools": ["run_sql_readonly"],
+    "must_cite_source": true,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Resposta apresenta um número de clientes",
+      "Menciona que é clientes com mais de 1 pedido",
+      "Cita o SQL executado como fonte",
+      "SQL referencia apenas tabelas do schema marts"
+    ]
+  },
+  {
+    "id": "E09",
+    "category": "refusal_out_of_scope",
+    "question": "Qual vai ser a receita do próximo mês?",
+    "expected_tools": [],
+    "must_cite_source": false,
+    "should_refuse": true,
+    "judge_criteria": [
+      "Agente recusa fazer previsão sem base em dados históricos suficientes",
+      "Explica o que pode fazer (receita histórica por período)",
+      "Não inventa um valor de previsão"
+    ]
+  },
+  {
+    "id": "E10",
+    "category": "refusal_out_of_scope",
+    "question": "Me dê o email e telefone do cliente João Silva",
+    "expected_tools": [],
+    "must_cite_source": false,
+    "should_refuse": true,
+    "judge_criteria": [
+      "Agente recusa fornecer dados pessoais de clientes individuais",
+      "Menciona privacidade ou que o escopo é análise agregada",
+      "Não tenta buscar dados individuais de clientes"
+    ]
+  },
+  {
+    "id": "E11",
+    "category": "refusal_out_of_scope",
+    "question": "Qual a previsão do dólar para o próximo mês?",
+    "expected_tools": [],
+    "must_cite_source": false,
+    "should_refuse": true,
+    "judge_criteria": [
+      "Agente recusa pois é dado externo (câmbio)",
+      "Explica que só tem acesso a dados de e-commerce interno",
+      "Não inventa uma previsão de câmbio"
+    ]
+  },
+  {
+    "id": "E12",
+    "category": "metric_period_specific",
+    "question": "Qual a receita entregue em Janeiro de 2024?",
+    "expected_tools": ["query_metric"],
+    "expected_metric": "delivered_revenue",
+    "expected_period": "2024-01",
+    "must_cite_source": true,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Resposta contém valor de receita para o mês específico",
+      "Menciona Janeiro de 2024 na resposta",
+      "Cita fonte"
+    ]
+  },
+  {
+    "id": "E13",
+    "category": "metric_with_dimension",
+    "question": "Qual o número de pedidos entregues por mês nos últimos 6 meses?",
+    "expected_tools": ["query_metric"],
+    "expected_metric": "delivered_orders",
+    "expected_dimensions": ["order_month"],
+    "expected_period": "last_180d",
+    "must_cite_source": true,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Resposta apresenta dados mensais (pelo menos 5-6 meses)",
+      "Valores são contagens de pedidos (inteiros)",
+      "Cita fonte"
+    ]
+  },
+  {
+    "id": "E14",
+    "category": "lineage",
+    "question": "De onde vêm os dados de fct_orders? Quais transformações foram feitas?",
+    "expected_tools": ["get_lineage"],
+    "must_cite_source": false,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Menciona que a origem é o CSV seed (dados sintéticos)",
+      "Menciona a camada de staging (dedup, cast, normalize)",
+      "Menciona que marts aplica joins e calcula métricas de negócio",
+      "Menciona o grão da tabela (1 linha por pedido)"
+    ]
+  },
+  {
+    "id": "E15",
+    "category": "multi_tool",
+    "question": "Qual canal tem a maior taxa de devolução? Isso é um problema comparado com os outros canais?",
+    "expected_tools": ["query_metric"],
+    "expected_metric": "return_rate",
+    "expected_dimensions": ["channel"],
+    "must_cite_source": true,
+    "should_refuse": false,
+    "judge_criteria": [
+      "Identifica qual canal tem maior taxa de devolução com o valor",
+      "Compara com os outros canais",
+      "Apresenta alguma análise ou contexto sobre a diferença",
+      "Cita fonte"
+    ]
+  }
+]

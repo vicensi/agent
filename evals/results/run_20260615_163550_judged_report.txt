@@ -1,0 +1,41 @@
+
+╔══════════════════════════════════════════════════════════╗
+║         AGENTIC DATA PLATFORM — EVAL REPORT              ║
+║         run_20260615_163550_judged.json                   ║
+╚══════════════════════════════════════════════════════════╝
+
+── RESUMO ──────────────────────────────────────────────────
+  Total de casos : 18
+  Erros de runner: 0
+  Casos válidos  : 18
+  Casos julgados : 0
+
+── MÉTRICAS ESTRUTURAIS (sem LLM) ──────────────────────────
+  Pass rate geral  : 89%
+  Citation rate    : 100%  (respostas com seção Fonte)
+  Refusal accuracy : 100%  (recusou quando deveria / não recusou quando não)
+  Tool correctness : 89%  (usou a tool esperada)
+
+── MÉTRICAS QUALITATIVAS (LLM-as-judge) ────────────────────
+  Qualidade média  : 0.0/5
+  Critérios pass   : 0%  (0/0 critérios)
+  Alucinações      : 0/0 casos
+
+── LATÊNCIA ────────────────────────────────────────────────
+  Média  : 16.4s
+  Máxima : 48.5s
+
+── POR CATEGORIA ───────────────────────────────────────────
+  catalog_first               : 1/1 pass
+  lineage                     : 1/1 pass
+  metric_comparison           : 1/1 pass
+  metric_simple               : 2/2 pass
+  metric_with_dimension       : 5/6 pass
+  refusal_out_of_scope        : 2/2 pass
+  sql_custom                  : 4/5 pass
+
+── CASOS COM PROBLEMAS ─────────────────────────────────────
+  ❌ V2-E06: Qual a receita entregue por categoria de produto?... [tool_errada]
+  ❌ V2-E09: Quantos pedidos únicos existem no total e qual o valor médio... [tool_errada]
+
+────────────────────────────────────────────────────────────

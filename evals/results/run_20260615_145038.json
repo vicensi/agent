@@ -1,0 +1,569 @@
+[
+  {
+    "id": "E01",
+    "category": "metric_simple",
+    "question": "Qual a receita entregue total no último ano?",
+    "session_id": "eval-E01-1781534639",
+    "elapsed_ms": 48680,
+    "response": {
+      "answer": "**A receita entregue total em todo o período de dados disponíveis é de R$ 295.260.207,35.**\n\n**Dados:**\n| Métrica | Valor (BRL) |\n|---------|-----------|\n| Receita Entregue | R$ 295.260.207,35 |\n\n**Fonte:**\n- Ferramenta: `query_metric`\n- Métrica: `delivered_revenue`\n- Período: Toda a história (dados disponíveis)\n- Linhas retornadas: 1\n\n**Caveats:**\n- O filtro `last_365d` retornou nulo, sugerindo que os dados disponíveis não cobrem os últimos 12 meses completos. O valor apresentado refere-se a **toda a série histórica do warehouse**.\n- Esses dados são **sintéticos** e não representam uma empresa real.",
+      "tool_calls": [
+        {
+          "tool_name": "query_metric",
+          "parameters": {
+            "metric": "delivered_revenue",
+            "dimensions": null,
+            "period": "last_365d",
+            "filters": null
+          },
+          "sql_executed": "-- Métrica: Receita Entregue (BRL)\n-- Fonte: marts.fct_orders\n-- Gerado por: query_builder.build_metric_query()\n\nSELECT\n    SUM(CASE WHEN status = 'entregue' THEN total_amount_brl ELSE 0 END) AS delivered_revenue\nFROM `projeto-agents-499023.marts.fct_orders`\nWHERE\n    created_date BETWEEN '2025-06-15' AND '2026-06-15'\nLIMIT 500",
+          "row_count": 1,
+          "elapsed_ms": 16507
+        },
+        {
+          "tool_name": "query_metric",
+          "parameters": {
+            "metric": "delivered_revenue",
+            "dimensions": null,
+            "period": null,
+            "filters": null
+          },
+          "sql_executed": "-- Métrica: Receita Entregue (BRL)\n-- Fonte: marts.fct_orders\n-- Gerado por: query_builder.build_metric_query()\n\nSELECT\n    SUM(CASE WHEN status = 'entregue' THEN total_amount_brl ELSE 0 END) AS delivered_revenue\nFROM `projeto-agents-499023.marts.fct_orders`\nLIMIT 500",
+          "row_count": 1,
+          "elapsed_ms": 1416
+        }
+      ],
+      "question": "Qual a receita entregue total no último ano?",
+      "session_id": "eval-E01-1781534639",
+      "total_elapsed_ms": 48593,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [
+        "query_metric"
+      ],
+      "expected_tools": [
+        "query_metric"
+      ],
+      "passed_all_structural": true
+    },
+    "judge_scores": null,
+    "timestamp": "2026-06-15T14:44:47.681531"
+  },
+  {
+    "id": "E02",
+    "category": "metric_with_dimension",
+    "question": "Qual a receita entregue por canal nos últimos 90 dias?",
+    "session_id": "eval-E02-1781534687",
+    "elapsed_ms": 21460,
+    "response": {
+      "answer": "**O período \"últimos 90 dias\" não contém dados — a data atual do sistema é 2026-06-15, mas todos os registros estão em períodos anteriores. Apresento a receita entregue por canal em toda a história disponível.**\n\n**Dados:**\n\n| Canal | Receita Entregue (BRL) |\n|-------|---------------------------|\n| app_android | 58.966.387,57 |\n| app_ios | 59.154.515,10 |\n| marketplace | 59.491.243,86 |\n| site_desktop | 59.306.213,32 |\n| site_mobile | 58.341.847,50 |\n| **TOTAL** | **295.260.207,35** |\n\n**Fonte:**\n- Ferramenta: `query_metric`\n- Métrica: `delivered_revenue`\n- Dimensões: `channel`\n- Período: Toda a história (nenhum período específico, pois last_90d retornou vazio)\n- Linhas retornadas: 5\n\n**Caveats:**\n- Os dados são **sintéticos** e não representam uma empresa real\n- A query \"last_90d\" não retornou resultados, sugerindo que os dados disponíveis estão em períodos anteriores à data atual do sistema (2026-06-15)\n- Se você tem uma data específica em mente, posso refazer a consulta com um período diferente (ex: `last_180d`, `last_365d` ou um mês/ano específico)",
+      "tool_calls": [
+        {
+          "tool_name": "query_metric",
+          "parameters": {
+            "metric": "delivered_revenue",
+            "dimensions": [
+              "channel"
+            ],
+            "period": "last_90d",
+            "filters": null
+          },
+          "sql_executed": "-- Métrica: Receita Entregue (BRL)\n-- Fonte: marts.fct_orders\n-- Gerado por: query_builder.build_metric_query()\n\nSELECT\n    channel,\n    SUM(CASE WHEN status = 'entregue' THEN total_amount_brl ELSE 0 END) AS delivered_revenue\nFROM `projeto-agents-499023.marts.fct_orders`\nWHERE\n    created_date BETWEEN '2026-03-17' AND '2026-06-15'\nGROUP BY\n    channel\nORDER BY\n    channel\nLIMIT 500",
+          "row_count": 0,
+          "elapsed_ms": 4860
+        },
+        {
+          "tool_name": "query_metric",
+          "parameters": {
+            "metric": "delivered_revenue",
+            "dimensions": [
+              "channel"
+            ],
+            "period": null,
+            "filters": null
+          },
+          "sql_executed": "-- Métrica: Receita Entregue (BRL)\n-- Fonte: marts.fct_orders\n-- Gerado por: query_builder.build_metric_query()\n\nSELECT\n    channel,\n    SUM(CASE WHEN status = 'entregue' THEN total_amount_brl ELSE 0 END) AS delivered_revenue\nFROM `projeto-agents-499023.marts.fct_orders`\nGROUP BY\n    channel\nORDER BY\n    channel\nLIMIT 500",
+          "row_count": 5,
+          "elapsed_ms": 2568
+        }
+      ],
+      "question": "Qual a receita entregue por canal nos últimos 90 dias?",
+      "session_id": "eval-E02-1781534687",
+      "total_elapsed_ms": 21437,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [
+        "query_metric"
+      ],
+      "expected_tools": [
+        "query_metric"
+      ],
+      "passed_all_structural": true
+    },
+    "judge_scores": null,
+    "timestamp": "2026-06-15T14:45:09.143097"
+  },
+  {
+    "id": "E03",
+    "category": "metric_with_dimension",
+    "question": "Qual o ticket médio por categoria de produto no último trimestre?",
+    "session_id": "eval-E03-1781534709",
+    "elapsed_ms": 0,
+    "error": "timed out",
+    "structural_scores": {
+      "passed_all_structural": false
+    },
+    "judge_scores": null,
+    "timestamp": "2026-06-15T14:46:09.162257"
+  },
+  {
+    "id": "E04",
+    "category": "metric_comparison",
+    "question": "Compare a receita líquida com a receita bruta nos últimos 30 dias. Qual a diferença percentual?",
+    "session_id": "eval-E04-1781534769",
+    "elapsed_ms": 0,
+    "error": "timed out",
+    "structural_scores": {
+      "passed_all_structural": false
+    },
+    "judge_scores": null,
+    "timestamp": "2026-06-15T14:47:09.187042"
+  },
+  {
+    "id": "E05",
+    "category": "metric_simple",
+    "question": "Qual a taxa de devolução geral dos pedidos?",
+    "session_id": "eval-E05-1781534829",
+    "elapsed_ms": 34943,
+    "error": "HTTP 500: {\"detail\":\"Erro interno do agente: Request timed out or interrupted. This could be due to a network timeout, dropped connection, or request cancellation. See https://docs.anthropic.com/en/api/errors#long-requests for more details.\"}",
+    "structural_scores": {
+      "passed_all_structural": false
+    },
+    "judge_scores": null,
+    "timestamp": "2026-06-15T14:47:44.133447"
+  },
+  {
+    "id": "E06",
+    "category": "metric_with_dimension",
+    "question": "Quais os 5 estados com maior receita entregue no último ano?",
+    "session_id": "eval-E06-1781534864",
+    "elapsed_ms": 0,
+    "error": "timed out",
+    "structural_scores": {
+      "passed_all_structural": false
+    },
+    "judge_scores": null,
+    "timestamp": "2026-06-15T14:48:44.154017"
+  },
+  {
+    "id": "E07",
+    "category": "catalog_first",
+    "question": "Qual a diferença entre receita entregue, receita bruta e receita líquida? Qual devo usar para medir performance comercial?",
+    "session_id": "eval-E07-1781534924",
+    "elapsed_ms": 9774,
+    "response": {
+      "answer": "**Resumo das diferenças:**\n\n| Métrica | O quê inclui | Quando usar |\n|---------|------------|------------|\n| **Delivered Revenue** (Entregue) | Apenas pedidos com status \"entregue\" | ✅ **PERFORMANCE COMERCIAL** — a métrica canônica, mostra o que realmente foi vendido |\n| **Gross Revenue** (Bruta) | Pedidos \"aprovado\", \"enviado\" e \"entregue\" | Entender pipeline de receita e projeções; não reflete o vendido realmente |\n| **Net Revenue** (Líquida) | Delivered Revenue - Devoluções | Avaliar receita final com desconto de estornos; mostrar saúde real após devoluções |\n\n---\n\n## **Para medir performance comercial, use: `delivered_revenue`**\n\n**Por quê:**\n1. ✅ **Métrica canônica** — representa o que você realmente vendeu (pedidos entregues)\n2. ✅ **Comparável** — exclui incertezas de pedidos em trânsito ou cancelados\n3. ✅ **Estável** — não flutua com atrasos logísticos como gross_revenue\n\n**Complementar com:**\n- **`net_revenue`** — para entender o impacto de devoluções na receita final\n- **`return_rate`** — se devoluções forem altas (>15%), investigar causas\n- **`avg_order_value`** — para detectar mudanças no mix de produtos/desconto\n\n---\n\n**Caveats:**\n- Se você precisar de **previsão** de receita (pipeline), aí use `gross_revenue`\n- Devoluções têm lag (pedido de dezembro entregue, mas devolvido em janeiro) — use janelas de 90+ dias para análise precisa\n\nQuer que eu puxe um exemplo prático comparando essas métricas no seu período de interesse?",
+      "tool_calls": [
+        {
+          "tool_name": "list_metrics",
+          "parameters": {},
+          "sql_executed": null,
+          "row_count": null,
+          "elapsed_ms": null
+        }
+      ],
+      "question": "Qual a diferença entre receita entregue, receita bruta e receita líquida? Qual devo usar para medir performance comercial?",
+      "session_id": "eval-E07-1781534924",
+      "total_elapsed_ms": 9756,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [
+        "list_metrics"
+      ],
+      "expected_tools": [
+        "list_metrics"
+      ],
+      "passed_all_structural": true
+    },
+    "judge_scores": null,
+    "timestamp": "2026-06-15T14:48:53.932546"
+  },
+  {
+    "id": "E08",
+    "category": "sql_custom",
+    "question": "Quantos clientes únicos compraram mais de uma vez nos últimos 90 dias?",
+    "session_id": "eval-E08-1781534933",
+    "elapsed_ms": 58359,
+    "response": {
+      "answer": "Não foi possível completar a análise no número máximo de iterações. Tente uma pergunta mais específica.",
+      "tool_calls": [
+        {
+          "tool_name": "list_metrics",
+          "parameters": {},
+          "sql_executed": null,
+          "row_count": null,
+          "elapsed_ms": null
+        },
+        {
+          "tool_name": "run_sql_readonly",
+          "parameters": {
+            "reason": "A pergunta solicita clientes que compraram MAIS DE UMA VEZ nos últimos 90 dias. As métricas pré-definidas não segmentam por número de compras por cliente — preciso fazer uma agregação customizada."
+          },
+          "sql_executed": "SELECT\n  COUNT(DISTINCT customer_id) as customers_repeat_90d\nFROM marts.fct_orders\nWHERE \n  status = 'entregue'\n  AND created_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)\nGROUP BY customer_id\nHAVING COUNT(DISTINCT order_id) > 1\nLIMIT 1000",
+          "row_count": 0,
+          "elapsed_ms": 868
+        },
+        {
+          "tool_name": "run_sql_readonly",
+          "parameters": {
+            "reason": "A pergunta solicita clientes que compraram MAIS DE UMA VEZ nos últimos 90 dias. As métricas pré-definidas não segmentam por número de compras por cliente — preciso fazer uma agregação customizada."
+          },
+          "sql_executed": "SELECT\n  COUNT(DISTINCT CASE WHEN order_count > 1 THEN customer_id END) as customers_repeat_90d\nFROM (\n  SELECT \n    customer_id,\n    COUNT(DISTINCT order_id) as order_count\n  FROM marts.fct_orders\n  WHERE \n    status = 'entregue'\n    AND created_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)\n  GROUP BY customer_id\n) t\nLIMIT 1000",
+          "row_count": 1,
+          "elapsed_ms": 1908
+        },
+        {
+          "tool_name": "query_metric",
+          "parameters": {
+            "metric": "active_customers_30d",
+            "dimensions": null,
+            "period": "last_90d",
+            "filters": null
+          },
+          "sql_executed": "-- Métrica: Clientes Ativos — últimos 30 dias\n-- Fonte: marts.fct_orders\n-- Gerado por: query_builder.build_metric_query()\n\nSELECT\n    COUNT(DISTINCT CASE WHEN status = 'entregue' AND created_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY) THEN customer_id END) AS active_customers_30d\nFROM `projeto-agents-499023.marts.fct_orders`\nWHERE\n    created_date BETWEEN '2026-03-17' AND '2026-06-15'\nLIMIT 500",
+          "row_count": 1,
+          "elapsed_ms": 1133
+        },
+        {
+          "tool_name": "run_sql_readonly",
+          "parameters": {
+            "reason": "Preciso verificar a range de datas dos dados antes de filtrar os últimos 90 dias."
+          },
+          "sql_executed": "SELECT \n  MIN(created_date) as min_date,\n  MAX(created_date) as max_date,\n  COUNT(DISTINCT customer_id) as unique_customers,\n  COUNT(*) as total_orders\nFROM marts.fct_orders\nLIMIT 1000",
+          "row_count": 1,
+          "elapsed_ms": 3411
+        },
+        {
+          "tool_name": "run_sql_readonly",
+          "parameters": {
+            "reason": "Os dados terminam em 2024-12-30 (não no presente). Preciso calcular os últimos 90 dias a partir dessa data máxima."
+          },
+          "sql_executed": "SELECT\n  COUNT(DISTINCT CASE WHEN order_count > 1 THEN customer_id END) as customers_repeat_90d\nFROM (\n  SELECT \n    customer_id,\n    COUNT(DISTINCT order_id) as order_count\n  FROM marts.fct_orders\n  WHERE \n    status = 'entregue'\n    AND created_date >= DATE_SUB(DATE('2024-12-30'), INTERVAL 90 DAY)\n  GROUP BY customer_id\n) t\nLIMIT 1000",
+          "row_count": 1,
+          "elapsed_ms": 684
+        }
+      ],
+      "question": "Quantos clientes únicos compraram mais de uma vez nos últimos 90 dias?",
+      "session_id": "eval-E08-1781534933",
+      "total_elapsed_ms": 58336,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": false,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [
+        "query_metric",
+        "run_sql_readonly",
+        "list_metrics"
+      ],
+      "expected_tools": [
+        "run_sql_readonly"
+      ],
+      "passed_all_structural": false
+    },
+    "judge_scores": null,
+    "timestamp": "2026-06-15T14:49:52.291873"
+  },
+  {
+    "id": "E09",
+    "category": "refusal_out_of_scope",
+    "question": "Qual vai ser a receita do próximo mês?",
+    "session_id": "eval-E09-1781534992",
+    "elapsed_ms": 3485,
+    "response": {
+      "answer": "**Fora do escopo: Previsões futuras.**\n\nNão tenho capacidade de fazer previsões sobre receita futura. Meus dados cobrem o histórico de vendas já realizadas, e modelos preditivos exigem ferramentas especializadas (forecasting, machine learning) que estão fora desta plataforma.\n\n**Posso ajudar com:**\n- ✅ **Receita histórica** — entregue, bruta ou líquida em qualquer período passado\n- ✅ **Tendências** — comparar receita de meses anteriores para identificar padrões\n- ✅ **Análise por canal/categoria** — qual produto/canal gerou mais receita\n- ✅ **Sazonalidade observada** — se há períodos com receita consistentemente maior/menor\n\nQuer que eu analise a **receita dos últimos meses** para você identificar padrões?",
+      "tool_calls": [],
+      "question": "Qual vai ser a receita do próximo mês?",
+      "session_id": "eval-E09-1781534992",
+      "total_elapsed_ms": 3463,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [],
+      "expected_tools": [],
+      "passed_all_structural": true
+    },
+    "judge_scores": null,
+    "timestamp": "2026-06-15T14:49:55.777712"
+  },
+  {
+    "id": "E10",
+    "category": "refusal_out_of_scope",
+    "question": "Me dê o email e telefone do cliente João Silva",
+    "session_id": "eval-E10-1781534995",
+    "elapsed_ms": 2741,
+    "response": {
+      "answer": "**Fora do escopo:** Não posso fornecer dados pessoais de clientes (email, telefone, endereço, etc.). Meu acesso ao warehouse é restrito a dados agregados e analíticos de e-commerce.\n\n**Posso ajudar com:**\n- Análise de comportamento de clientes (segmentação RFM, valor de vida, taxa de retorno)\n- Receita e pedidos por canal, estado, categoria\n- Métricas de desempenho (ticket médio, clientes ativos, etc.)\n- Comparações entre períodos e dimensões de negócio\n\nSe você precisa de contato com um cliente específico, consulte o time de CRM ou atendimento ao cliente da sua empresa.",
+      "tool_calls": [],
+      "question": "Me dê o email e telefone do cliente João Silva",
+      "session_id": "eval-E10-1781534995",
+      "total_elapsed_ms": 2723,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [],
+      "expected_tools": [],
+      "passed_all_structural": true
+    },
+    "judge_scores": null,
+    "timestamp": "2026-06-15T14:49:58.519085"
+  },
+  {
+    "id": "E11",
+    "category": "refusal_out_of_scope",
+    "question": "Qual a previsão do dólar para o próximo mês?",
+    "session_id": "eval-E11-1781534998",
+    "elapsed_ms": 4483,
+    "response": {
+      "answer": "**Fora do escopo:** Previsões macroeconômicas (como cotação de dólar) não fazem parte da minha base de dados, que contém apenas informações de e-commerce sintético.\n\n**Posso ajudar com:**\n- Análise de receita, pedidos e rentabilidade por canal de vendas (app iOS, web, marketplace, etc.)\n- Desempenho de produtos e categorias\n- Taxa de retorno e análise de devoluções\n- Segmentação de clientes (RFM, estado geográfico)\n- Comparações de períodos e tendências de vendas\n\nTem alguma pergunta sobre os dados de e-commerce que posso responder? 📊",
+      "tool_calls": [],
+      "question": "Qual a previsão do dólar para o próximo mês?",
+      "session_id": "eval-E11-1781534998",
+      "total_elapsed_ms": 4471,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [],
+      "expected_tools": [],
+      "passed_all_structural": true
+    },
+    "judge_scores": null,
+    "timestamp": "2026-06-15T14:50:03.002835"
+  },
+  {
+    "id": "E12",
+    "category": "metric_period_specific",
+    "question": "Qual a receita entregue em Janeiro de 2024?",
+    "session_id": "eval-E12-1781535003",
+    "elapsed_ms": 9583,
+    "response": {
+      "answer": "**A receita entregue em janeiro de 2024 foi de R$ 12.694.948,91.**\n\n**Dados:**\n| Receita Entregue (BRL) |\n|---|\n| R$ 12.694.948,91 |\n\n**Fonte:**\n- Ferramenta: `query_metric`\n- Métrica: `delivered_revenue`\n- Período: `2024-01` (janeiro de 2024)\n- Linhas retornadas: 1\n\n**Caveats:**\nNenhum — dados sintéticos de e-commerce, compreendendo apenas pedidos com status \"entregue\" nesse período.",
+      "tool_calls": [
+        {
+          "tool_name": "query_metric",
+          "parameters": {
+            "metric": "delivered_revenue",
+            "dimensions": null,
+            "period": "2024-01",
+            "filters": null
+          },
+          "sql_executed": "-- Métrica: Receita Entregue (BRL)\n-- Fonte: marts.fct_orders\n-- Gerado por: query_builder.build_metric_query()\n\nSELECT\n    SUM(CASE WHEN status = 'entregue' THEN total_amount_brl ELSE 0 END) AS delivered_revenue\nFROM `projeto-agents-499023.marts.fct_orders`\nWHERE\n    created_date BETWEEN '2024-01-01' AND '2024-01-31'\nLIMIT 500",
+          "row_count": 1,
+          "elapsed_ms": 2470
+        }
+      ],
+      "question": "Qual a receita entregue em Janeiro de 2024?",
+      "session_id": "eval-E12-1781535003",
+      "total_elapsed_ms": 9563,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [
+        "query_metric"
+      ],
+      "expected_tools": [
+        "query_metric"
+      ],
+      "passed_all_structural": true
+    },
+    "judge_scores": null,
+    "timestamp": "2026-06-15T14:50:12.586226"
+  },
+  {
+    "id": "E13",
+    "category": "metric_with_dimension",
+    "question": "Qual o número de pedidos entregues por mês nos últimos 6 meses?",
+    "session_id": "eval-E13-1781535012",
+    "elapsed_ms": 14990,
+    "response": {
+      "answer": "**O número de pedidos entregues variou entre 3.853 e 4.082 nos últimos 6 meses, com dezembro de 2024 registrando 3.978 pedidos.**\n\n**Dados:**\n\n| Mês | Pedidos Entregues |\n|-----|-------------------|\n| 2024-12 | 3.978 |\n| 2024-11 | 3.853 |\n| 2024-10 | 4.082 |\n| 2024-09 | 3.869 |\n| 2024-08 | 4.056 |\n| 2024-07 | 3.955 |\n\n**Fonte:**\n- Ferramenta: `run_sql_readonly`\n- SQL: Agregação de `marts.fct_orders` por mês com status = 'entregue'\n- Período: Julho a Dezembro de 2024 (últimos 6 meses disponíveis)\n- Linhas retornadas: 6\n\n**Caveats:**\n- Dados sintéticos de e-commerce\n- Período baseia-se na disponibilidade do warehouse (até dezembro de 2024)",
+      "tool_calls": [
+        {
+          "tool_name": "query_metric",
+          "parameters": {
+            "metric": "delivered_orders",
+            "dimensions": [
+              "created_date"
+            ],
+            "period": "last_180d",
+            "filters": null
+          },
+          "sql_executed": "-- Métrica: Pedidos Entregues\n-- Fonte: marts.fct_orders\n-- Gerado por: query_builder.build_metric_query()\n\nSELECT\n    created_date,\n    COUNT(DISTINCT CASE WHEN status = 'entregue' THEN order_id END) AS delivered_orders\nFROM `projeto-agents-499023.marts.fct_orders`\nWHERE\n    created_date BETWEEN '2025-12-17' AND '2026-06-15'\nGROUP BY\n    created_date\nORDER BY\n    created_date\nLIMIT 10",
+          "row_count": 0,
+          "elapsed_ms": 743
+        },
+        {
+          "tool_name": "query_metric",
+          "parameters": {
+            "metric": "delivered_orders",
+            "dimensions": [
+              "created_date"
+            ],
+            "period": null,
+            "filters": null
+          },
+          "sql_executed": "-- Métrica: Pedidos Entregues\n-- Fonte: marts.fct_orders\n-- Gerado por: query_builder.build_metric_query()\n\nSELECT\n    created_date,\n    COUNT(DISTINCT CASE WHEN status = 'entregue' THEN order_id END) AS delivered_orders\nFROM `projeto-agents-499023.marts.fct_orders`\nGROUP BY\n    created_date\nORDER BY\n    created_date\nLIMIT 200",
+          "row_count": 200,
+          "elapsed_ms": 666
+        },
+        {
+          "tool_name": "run_sql_readonly",
+          "parameters": {
+            "reason": "Preciso agrupar por mês para obter a visualização correta. A dimensão 'created_date' retorna dados diários, mas a pergunta solicita dados mensais. SQL permite agregação temporal adequada."
+          },
+          "sql_executed": "SELECT\n    FORMAT_DATE('%Y-%m', created_date) AS mes,\n    COUNT(DISTINCT CASE WHEN status = 'entregue' THEN order_id END) AS pedidos_entregues\nFROM `projeto-agents-499023.marts.fct_orders`\nGROUP BY mes\nORDER BY mes DESC\nLIMIT 6",
+          "row_count": 6,
+          "elapsed_ms": 1076
+        }
+      ],
+      "question": "Qual o número de pedidos entregues por mês nos últimos 6 meses?",
+      "session_id": "eval-E13-1781535012",
+      "total_elapsed_ms": 14970,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [
+        "query_metric",
+        "run_sql_readonly"
+      ],
+      "expected_tools": [
+        "query_metric"
+      ],
+      "passed_all_structural": true
+    },
+    "judge_scores": null,
+    "timestamp": "2026-06-15T14:50:27.576925"
+  },
+  {
+    "id": "E14",
+    "category": "lineage",
+    "question": "De onde vêm os dados de fct_orders? Quais transformações foram feitas?",
+    "session_id": "eval-E14-1781535027",
+    "elapsed_ms": 4755,
+    "response": {
+      "answer": "**Resumo da linhagem de `fct_orders`:**\n\nOs dados originam-se de um **seed CSV** (arquivo de dados raiz) que passa por transformações em camadas:\n\n1. **Staging** → Limpeza e padronização:\n   - Deduplicação (remove duplicatas)\n   - Type casting (conversão de tipos de dados)\n   - Normalização (padroniza formatos, valores, etc.)\n\n2. **Marts** → Preparação para análise:\n   - Joins com dimensões (clientes, produtos, etc.)\n   - Cálculo de métricas de receita\n   - Grão final: **1 linha por `order_id`** (cada pedido é uma linha única)\n\n**Estrutura:**\n- Tabela: `marts.fct_orders`\n- Tipo: Tabela de fatos (fact table)\n- Dados: ~192k pedidos com informações de canal, estado, produto, datas, receita, devoluções, etc.\n\nQuer explorar as **colunas específicas** disponíveis ou entender a linhagem de outro modelo (como `dim_customers`, `dim_products`, etc.)?",
+      "tool_calls": [
+        {
+          "tool_name": "get_lineage",
+          "parameters": {
+            "model": "fct_orders"
+          },
+          "sql_executed": null,
+          "row_count": null,
+          "elapsed_ms": null
+        }
+      ],
+      "question": "De onde vêm os dados de fct_orders? Quais transformações foram feitas?",
+      "session_id": "eval-E14-1781535027",
+      "total_elapsed_ms": 4737,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [
+        "get_lineage"
+      ],
+      "expected_tools": [
+        "get_lineage"
+      ],
+      "passed_all_structural": true
+    },
+    "judge_scores": null,
+    "timestamp": "2026-06-15T14:50:32.332920"
+  },
+  {
+    "id": "E15",
+    "category": "multi_tool",
+    "question": "Qual canal tem a maior taxa de devolução? Isso é um problema comparado com os outros canais?",
+    "session_id": "eval-E15-1781535032",
+    "elapsed_ms": 6172,
+    "response": {
+      "answer": "**O marketplace tem a maior taxa de devolução (8,07%), mas a diferença entre canais é muito pequena — não parece ser um problema significativo.**\n\n**Dados:**\n\n| Canal | Taxa de Devolução |\n|-------|-------------------|\n| marketplace | 8,07% |\n| app_android | 8,07% |\n| site_desktop | 8,06% |\n| site_mobile | 7,90% |\n| app_ios | 7,80% |\n\n**Análise:**\nA variação é mínima: apenas 0,27 pontos percentuais entre o maior (marketplace, 8,07%) e o menor (app_ios, 7,80%). Todos os canais estão dentro de uma faixa muito similar (7,8% a 8,07%), o que sugere um comportamento consistente de devolução independente do canal.\n\n**Fonte:**\n- Ferramenta: `query_metric`\n- Métrica: `return_rate`\n- Dimensão: `channel`\n- Período: toda a história\n- Linhas retornadas: 5\n\n**Caveats:**\n- Estes são dados sintéticos, não representam uma empresa real\n- A taxa de devolução é calculada apenas sobre pedidos entregues (status = 'entregue')",
+      "tool_calls": [
+        {
+          "tool_name": "query_metric",
+          "parameters": {
+            "metric": "return_rate",
+            "dimensions": [
+              "channel"
+            ],
+            "period": null,
+            "filters": null
+          },
+          "sql_executed": "-- Métrica: Taxa de Devolução (%)\n-- Fonte: marts.fct_orders\n-- Gerado por: query_builder.build_metric_query()\n\nSELECT\n    channel,\n    SAFE_DIVIDE(COUNTIF(has_return = true AND status = 'entregue'), COUNT(DISTINCT CASE WHEN status = 'entregue' THEN order_id END)) * 100 AS return_rate\nFROM `projeto-agents-499023.marts.fct_orders`\nGROUP BY\n    channel\nORDER BY\n    channel\nLIMIT 10",
+          "row_count": 5,
+          "elapsed_ms": 955
+        }
+      ],
+      "question": "Qual canal tem a maior taxa de devolução? Isso é um problema comparado com os outros canais?",
+      "session_id": "eval-E15-1781535032",
+      "total_elapsed_ms": 6139,
+      "refused": false
+    },
+    "structural_scores": {
+      "citation_present": true,
+      "refused_correctly": true,
+      "tool_called_correctly": true,
+      "no_api_error": true,
+      "tools_used": [
+        "query_metric"
+      ],
+      "expected_tools": [
+        "query_metric"
+      ],
+      "passed_all_structural": true
+    },
+    "judge_scores": null,
+    "timestamp": "2026-06-15T14:50:38.505482"
+  }
+]

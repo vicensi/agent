@@ -189,7 +189,14 @@ models:
           - not_null
 
       - name: avg_ticket_brl
-        description: "Ticket médio dos pedidos do dia/canal (total_amount_brl médio, todos os status)."
+        description: >
+          Ticket médio pré-calculado por dia/canal (AVG de total_amount_brl, todos os status).
+          NÃO-ADITIVO — não re-agregar no Looker Studio (gera média de médias).
+          No Looker, use campo calculado: SUM(total_revenue_brl) / SUM(total_orders).
+          No MCP server, pode ser usado diretamente (a query já fixa o grão).
+        meta:
+          bi_aggregation: "non_additive"
+          bi_replacement: "SUM(total_revenue_brl) / SUM(total_orders)"
 
     tests:
       - dbt_utils.unique_combination_of_columns:
